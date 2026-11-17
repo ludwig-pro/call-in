@@ -20,19 +20,19 @@ const moderatorLink = document.querySelector("[data-moderator-link]");
 moderatorLink.href = eventPage("/moderate/");
 if (eventContext.hosted) moderatorLink.hidden = true;
 if (eventContext.hosted && !token) {
-  loginMessage.textContent = "請使用建立活動後取得的私密設定連結。";
+  loginMessage.textContent = "Utilisez le lien privé de configuration obtenu lors de la création de l’événement.";
 }
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   token = String(new FormData(loginForm).get("token") || "");
-  loginMessage.textContent = "正在確認管理權限…";
+  loginMessage.textContent = "Vérification de l’accès…";
   await loadConfig();
 });
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  saveMessage.textContent = "正在檢查並儲存…";
+  saveMessage.textContent = "Vérification et enregistrement…";
   result.hidden = true;
   try {
     const next = readConfigFromForm();
@@ -42,7 +42,7 @@ form.addEventListener("submit", async (event) => {
     });
     config = saved.config;
     fillForm(config);
-    saveMessage.textContent = "已儲存";
+    saveMessage.textContent = "Enregistré";
     result.hidden = false;
     result.scrollIntoView({ behavior: "smooth", block: "nearest" });
   } catch (error) {
@@ -52,12 +52,12 @@ form.addEventListener("submit", async (event) => {
 
 document.querySelector("[data-add-poll]").addEventListener("click", () => {
   if (pollsRoot.children.length >= 8) {
-    saveMessage.textContent = "最多只能建立 8 場投票";
+    saveMessage.textContent = "Vous pouvez créer 8 sondages au maximum";
     return;
   }
   addPollEditor({
     id: `poll-${crypto.randomUUID().slice(0, 8)}`,
-    prompt: "現場投票",
+    prompt: "Sondage",
     question: "",
     options: ["", ""],
   });
@@ -123,7 +123,10 @@ function fillForm(next) {
     const editor = document.createElement("label");
     editor.className = "reaction-editor";
     editor.dataset.reactionId = reaction.id;
-    editor.innerHTML = `<span class="sr-only">${reaction.id}</span><input data-reaction-emoji maxlength="24" required aria-label="${reaction.id} emoji" /><input data-reaction-label maxlength="60" required aria-label="${reaction.id} label" />`;
+    editor.innerHTML = `<span class="sr-only"></span><input data-reaction-emoji maxlength="24" required /><input data-reaction-label maxlength="60" required />`;
+    editor.querySelector("span").textContent = reaction.label;
+    editor.querySelector("[data-reaction-emoji]").setAttribute("aria-label", `Emoji : ${reaction.label}`);
+    editor.querySelector("[data-reaction-label]").setAttribute("aria-label", `Libellé : ${reaction.label}`);
     editor.querySelector("[data-reaction-emoji]").value = reaction.emoji;
     editor.querySelector("[data-reaction-label]").value = reaction.label;
     reactionsRoot.append(editor);
@@ -144,11 +147,11 @@ function fillForm(next) {
   const themeRoot = document.querySelector("[data-theme-colors]");
   themeRoot.innerHTML = "";
   for (const [key, label] of Object.entries({
-    background: "背景",
-    panel: "卡片",
-    accent: "強調",
-    highlight: "提示",
-    positive: "正向",
+    background: "Fond",
+    panel: "Cartes",
+    accent: "Accent",
+    highlight: "Mise en évidence",
+    positive: "Positif",
   })) {
     const wrapper = document.createElement("label");
     wrapper.textContent = label;
@@ -166,11 +169,11 @@ function addPollEditor(poll) {
   editor.className = "poll-editor";
   editor.dataset.pollId = poll.id;
   editor.innerHTML = `
-    <legend class="sr-only">投票</legend>
-    <label>短標題<input data-poll-prompt maxlength="80" required /></label>
-    <label>問題<input data-poll-question maxlength="240" required /></label>
-    <label>選項，一行一個<textarea data-poll-options rows="3" required></textarea></label>
-    <button class="remove-poll" type="button" data-remove-poll aria-label="刪除這場投票">×</button>`;
+    <legend class="sr-only">Sondage</legend>
+    <label>Titre court<input data-poll-prompt maxlength="80" required /></label>
+    <label>Question<input data-poll-question maxlength="240" required /></label>
+    <label>Choix, un par ligne<textarea data-poll-options rows="3" required></textarea></label>
+    <button class="remove-poll" type="button" data-remove-poll aria-label="Supprimer ce sondage">×</button>`;
   editor.querySelector("[data-poll-prompt]").value = poll.prompt;
   editor.querySelector("[data-poll-question]").value = poll.question;
   editor.querySelector("[data-poll-options]").value = poll.options.join("\n");
@@ -197,7 +200,7 @@ function readConfigFromForm() {
   }));
   next.polls = [...document.querySelectorAll(".poll-editor")].map((editor) => {
     const options = editor.querySelector("[data-poll-options]").value.split("\n").map((item) => item.trim()).filter(Boolean);
-    if (options.length < 2 || options.length > 6) throw new Error("每場投票需要 2–6 個選項");
+    if (options.length < 2 || options.length > 6) throw new Error("Chaque sondage doit comporter de 2 à 6 choix");
     return {
       id: editor.dataset.pollId,
       prompt: editor.querySelector("[data-poll-prompt]").value.trim(),
@@ -231,9 +234,9 @@ function defaultModeration() {
     flags: { enabled: true, maxPerDevice: 8, autoHoldMin: 3, autoHoldMax: 5, autoHoldParticipantRatio: 0.03 },
     codeOfConduct: {
       version: new Date().toISOString().slice(0, 10),
-      title: "一起維持有用的討論",
-      summary: "直接討論觀點、方法與結論，讓問題能推進現場交流。",
-      rules: ["不做人身攻擊、騷擾、威脅或揭露私人資訊。", "不洗版或刻意干擾討論。"],
+      title: "Gardons une discussion constructive",
+      summary: "Discutez des idées, des méthodes et des conclusions pour faire avancer l’échange.",
+      rules: ["Pas d’attaques personnelles, de harcèlement, de menaces ni de divulgation d’informations privées.", "Pas de spam ni de perturbation volontaire."],
     },
   };
 }
@@ -259,15 +262,15 @@ async function request(path, options = {}) {
     },
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(response.status === 404 ? "管理 token 尚未設定或不正確" : data.error || "設定沒有儲存");
+  if (!response.ok) throw new Error(response.status === 404 ? "Code d’administration absent ou incorrect" : data.error || "Les paramètres n’ont pas été enregistrés");
   return data;
 }
 
 function humanError(error) {
   const message = String(error?.message || error);
-  if (message.includes("request too large")) return "設定內容太長，請減少投票或文字";
+  if (message.includes("request too large")) return "Configuration trop longue : réduisez le nombre de sondages ou la longueur des textes";
   if (message.includes("token")) return message;
-  return message || "操作失敗，請再試一次";
+  return message || "Échec de l’opération. Réessayez.";
 }
 
 if (token) void loadConfig();

@@ -30,7 +30,7 @@ const fundingYaml = await readFile(new URL("../.github/FUNDING.yml", import.meta
 const socialCard = await stat(new URL("../public/brand/call-in-social-card.png", import.meta.url));
 
 test("setup wizard keeps the admin token session-scoped and writes protected config", () => {
-  assert.match(setupHtml, /lang="zh-Hant-TW"/);
+  assert.match(setupHtml, /lang="fr"/);
   assert.match(setupHtml, /data-config-form/);
   assert.match(setupHtml, /href="\/present\/"/);
   assert.match(setupJs, /consumeAccessToken\("admin"\)/);
@@ -56,7 +56,7 @@ test("presenter view loads a safe deck URL and exposes responsive dashboard cont
   assert.match(presentHtml, /src="\/dashboard\/"/);
   assert.doesNotMatch(presentHtml, /data-audience-qr/);
   assert.match(presentJs, /fetch\(eventApi\("\/config"\)\)/);
-  assert.match(presentJs, /productHome\.href = english \? "\/en\/" : "\/"/);
+  assert.match(presentJs, /productHome\.href = french \? "\/fr\/"/);
   assert.match(presentJs, /productHome\.setAttribute\("aria-label", labels\.home\)/);
   assert.match(presentJs, /\["http:", "https:"\]/);
   assert.match(presentJs, /!parsed\.username && !parsed\.password/);
@@ -166,7 +166,7 @@ test("hosted creator replaces the landing-page demo and returns public and priva
   assert.doesNotMatch(demoHtml, /只會在這個分頁增加|本機展示/);
   assert.doesNotMatch(demoJs, /data-difficulty|data-reaction/);
   assert.match(eventContextJs, /apiBase: hostedMatch\s*\? `\/api\/events/);
-  assert.match(eventContextJs, /`\/api\/demo\/\$\{demoEnglish \? "en" : "zh"\}`/);
+  assert.match(eventContextJs, /`\/api\/demo\/\$\{demoLocale\}`/);
   assert.match(eventContextJs, /demoBase}\/audience\//);
   assert.match(demoCss, /\.demo-layout/);
   assert.match(demoCss, /display:inline-flex; align-items:center; justify-content:center/);

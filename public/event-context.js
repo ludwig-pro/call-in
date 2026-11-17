@@ -1,7 +1,8 @@
 const hostedMatch = location.pathname.match(/^\/e\/([a-f0-9]{32})(?:\/|$)/);
-const demoMatch = location.pathname.match(/^\/(en\/)?demo(?:\/|$)/);
-const demoEnglish = Boolean(demoMatch?.[1]);
-const demoBase = demoMatch ? `/${demoEnglish ? "en/" : ""}demo` : "";
+const demoMatch = location.pathname.match(/^\/(en\/|fr\/)?demo(?:\/|$)/);
+const demoEnglish = demoMatch?.[1] === "en/";
+const demoLocale = demoMatch?.[1] === "fr/" ? "fr" : demoMatch?.[1] === "en/" ? "en" : "zh";
+const demoBase = demoMatch ? `/${demoLocale === "zh" ? "" : `${demoLocale}/`}demo` : "";
 
 export const eventContext = {
   hosted: Boolean(hostedMatch),
@@ -12,7 +13,7 @@ export const eventContext = {
   apiBase: hostedMatch
     ? `/api/events/${hostedMatch[1]}`
     : demoMatch
-      ? `/api/demo/${demoEnglish ? "en" : "zh"}`
+      ? `/api/demo/${demoLocale}`
       : "/api",
 };
 

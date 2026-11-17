@@ -457,12 +457,22 @@ export class LiveSession extends DurableObject<Env> {
     }
 
     const english = config.locale.toLowerCase().startsWith("en");
+    const french = config.locale.toLowerCase().startsWith("fr");
     const questions: Array<{
       text: string;
       lens: QuestionLens;
       difficulty: number;
       upvotes: number;
-    }> = english
+    }> = french
+      ? [
+          { text: "Faut-il installer une application pour participer ?", lens: "clarify", difficulty: 2, upvotes: 8 },
+          { text: "Le PDF et les réponses sont-ils supprimés après sept jours ?", lens: "keeper", difficulty: 3, upvotes: 6 },
+          { text: "Puis-je partager le lien de modération avec une autre personne ?", lens: "clarify", difficulty: 3, upvotes: 5 },
+          { text: "Que se passe-t-il si la connexion de la salle est instable ?", lens: "keeper", difficulty: 4, upvotes: 4 },
+          { text: "Peut-on aussi utiliser cet outil pour un atelier ?", lens: "bridge", difficulty: 2, upvotes: 7 },
+          { text: "Peut-on poser une question sans utiliser son vrai nom ?", lens: "chorus", difficulty: 3, upvotes: 5 },
+        ]
+      : english
       ? [
           { text: "Does the audience need to install an app to join from a phone?", lens: "clarify", difficulty: 2, upvotes: 8 },
           { text: "Will the PDF and audience responses both disappear after seven days?", lens: "keeper", difficulty: 3, upvotes: 6 },
@@ -484,7 +494,7 @@ export class LiveSession extends DurableObject<Env> {
       const questionId = crypto.randomUUID();
       const voterId = crypto.randomUUID();
       const createdAt = now - (questions.length - index) * 4 * 60_000;
-      const nickname = english ? `Demo guest #${index + 1}` : `示範聽眾 #${index + 1}`;
+      const nickname = french ? `Participant de démonstration #${index + 1}` : english ? `Demo guest #${index + 1}` : `示範聽眾 #${index + 1}`;
       this.ctx.storage.sql.exec(
         `INSERT INTO questions
           (id, voter_id, text, nickname, lens, difficulty, created_at, visibility,

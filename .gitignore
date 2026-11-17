@@ -9,4 +9,6 @@ node_modules/
 dist/
 coverage/
 public/vendor/pdfjs/
+.selfhost-assets/
+wrangler.selfhost.jsonc
 .DS_Store

@@ -5,15 +5,17 @@ import {
   setDifficultyLabels,
 } from "./difficulty.js";
 import { eventApi, eventContext, eventPage } from "./event-context.js";
-import { createLocale } from "./i18n.js";
+import { createLocale, localizeConfig } from "./i18n.js";
 
 const apiBase = eventContext.apiBase;
-const config = await fetch(eventApi("/config")).then((response) => response.json());
+const config = localizeConfig(await fetch(eventApi("/config")).then((response) => response.json()));
 const locale = createLocale(config);
 const t = locale.text;
 locale.apply();
 if (locale.zhHant) {
   setDifficultyCopy({ responses: "筆回覆", average: "平均", waiting: "等待第一筆回覆" });
+} else if (locale.fr) {
+  setDifficultyCopy({ responses: (total) => total > 1 ? "réponses" : "réponse", average: "moyenne", waiting: "En attente de la première réponse", locale: "fr-FR" });
 }
 applyConfig(config);
 const storagePrefix = `${config.eventId}:live-deck`;
@@ -122,6 +124,7 @@ document.querySelectorAll("[data-reaction]").forEach((button) => {
       reactionMessageEl.textContent = t(
         `${button.firstChild.textContent.trim()} sent`,
         `${button.firstChild.textContent.trim()} 已送出`,
+        `${button.firstChild.textContent.trim()} envoyé`,
       );
       button.classList.remove("sent");
       void button.offsetWidth;
@@ -260,6 +263,7 @@ function render() {
     el.textContent = t(
       `${state.questions.length} questions`,
       `${state.questions.length} 個問題`,
+      `${state.questions.length} question${state.questions.length > 1 ? "s" : ""}`,
     );
   });
   const rankedQuestions = [...state.questions].sort(
@@ -333,8 +337,7 @@ function renderParticipant() {
   mySubmissionsEl.hidden = held.length === 0;
   if (
     held.length === 0 &&
-    (messageEl.textContent.includes("waiting before public display") ||
-      messageEl.textContent.includes("等待公開"))
+    messageEl.textContent === t("Received. It is waiting before public display", "已收到，正在等待公開")
   ) {
     messageEl.textContent = t("Published to the question pool", "已公開到問題池");
   }
@@ -350,6 +353,7 @@ function renderParticipant() {
 }
 
 function localizedQuestionStatus(question) {
+  if (locale.fr) return question.visibility === "public" ? "Publiée" : question.visibility === "pending" ? "En attente" : "Retenue";
   if (!locale.zhHant) return question.statusLabel;
   return question.visibility === "public"
     ? "已公開"

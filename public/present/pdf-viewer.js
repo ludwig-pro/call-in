@@ -4,6 +4,7 @@ import { resolvePdfDestinationPage } from "./pdf-links.js";
 GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.mjs";
 
 const params = new URLSearchParams(location.search);
+const french = params.get("lang") === "fr";
 const english = params.get("lang") === "en";
 const stage = document.querySelector("[data-pdf-stage]");
 const canvasWrap = document.querySelector("[data-pdf-canvas-wrap]");
@@ -15,7 +16,9 @@ const previous = document.querySelector("[data-pdf-prev]");
 const next = document.querySelector("[data-pdf-next]");
 const currentLabel = document.querySelector("[data-pdf-current]");
 const totalLabel = document.querySelector("[data-pdf-total]");
-const labels = english
+const labels = french
+  ? { title: "Présentation PDF Call-in", stage: "Diapositives PDF", loading: "Préparation des diapositives…", error: "Impossible d’afficher ce PDF. Utilisez « Ouvrir la présentation » dans la barre d’outils.", previous: "Diapositive précédente", next: "Diapositive suivante", page: (page, total) => `Diapositive ${page} sur ${total}`, internalLink: (page) => `Aller à la diapositive ${page}` }
+  : english
   ? { title: "Call-in PDF deck", stage: "PDF slides", loading: "Preparing slides…", error: "This PDF could not be displayed. Use “Open deck” in the presenter toolbar.", previous: "Previous page", next: "Next page", page: (page, total) => `Slide ${page} of ${total}`, internalLink: (page) => `Go to slide ${page}` }
   : { title: "Call-in PDF 簡報", stage: "PDF 簡報", loading: "正在準備簡報…", error: "這份 PDF 無法顯示，請使用講者工具列的「另開簡報」。", previous: "上一頁", next: "下一頁", page: (page, total) => `簡報第 ${page} 頁，共 ${total} 頁`, internalLink: (page) => `跳至第 ${page} 頁` };
 
@@ -27,7 +30,7 @@ let resizeTimer;
 let pointerStart;
 let suppressLinkClick = false;
 
-document.documentElement.lang = english ? "en" : "zh-Hant-TW";
+document.documentElement.lang = french ? "fr" : english ? "en" : "zh-Hant-TW";
 document.title = labels.title;
 stage.setAttribute("aria-label", labels.stage);
 status.textContent = labels.loading;

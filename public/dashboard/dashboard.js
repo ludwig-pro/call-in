@@ -5,18 +5,20 @@ import {
   setDifficultyLabels,
 } from "../difficulty.js";
 import { eventApi, eventContext, eventPage } from "../event-context.js";
-import { createLocale } from "../i18n.js";
+import { createLocale, localizeConfig } from "../i18n.js";
 
 document.documentElement.classList.toggle("embedded-dashboard", window.self !== window.top);
 
 const apiBase = eventContext.apiBase;
-const config = await fetch(eventApi("/config")).then((response) => response.json());
+const config = localizeConfig(await fetch(eventApi("/config")).then((response) => response.json()));
 const locale = createLocale(config);
 const t = locale.text;
 const reactionTimes = new Map();
 locale.apply();
 if (locale.zhHant) {
   setDifficultyCopy({ responses: "筆回覆", average: "平均", waiting: "等待第一筆回覆" });
+} else if (locale.fr) {
+  setDifficultyCopy({ responses: (total) => total > 1 ? "réponses" : "réponse", average: "moyenne", waiting: "En attente de la première réponse", locale: "fr-FR" });
 }
 applyConfig(config);
 document.querySelectorAll("[data-qr-image]").forEach((image) => {
@@ -36,7 +38,9 @@ const lensLabels = Object.fromEntries(config.question.lenses.map((lens) => [lens
 function render(state) {
   const mode = state.session?.mode || "open";
   const modeEl = document.querySelector("[data-session-mode]");
-  modeEl.textContent = locale.zhHant
+  modeEl.textContent = locale.fr
+    ? ({ open: "OUVERT", slow: "RALENTI", approval: "SUR APPROBATION", paused: "EN PAUSE", closed: "FERMÉ" })[mode] || mode
+    : locale.zhHant
     ? ({ open: "開放", slow: "慢速", approval: "需審核", paused: "暫停", closed: "關閉" })[
         mode
       ] || mode
@@ -46,6 +50,7 @@ function render(state) {
   document.querySelector("[data-poll-total]").textContent = t(
     `${state.polls.length} polls`,
     `${state.polls.length} 場`,
+    `${state.polls.length} sondage${state.polls.length > 1 ? "s" : ""}`,
   );
   pollsRoot.innerHTML = state.polls
     .map(
@@ -68,6 +73,7 @@ function render(state) {
   document.querySelector("[data-question-count]").textContent = t(
     `${state.questions.length} questions`,
     `${state.questions.length} 個問題`,
+    `${state.questions.length} question${state.questions.length > 1 ? "s" : ""}`,
   );
   const rankedQuestions = [...state.questions].sort(
     (first, second) =>

@@ -67,8 +67,14 @@ export function renderDifficultyChart(root, difficulty = {}) {
   }
   const totalRoot = root.querySelector("[data-difficulty-total]");
   if (totalRoot) {
+    const responses = typeof difficultyCopy.responses === "function" ? difficultyCopy.responses(total) : difficultyCopy.responses;
+    const formattedAverage = Number.isFinite(average)
+      ? difficultyCopy.locale
+        ? average.toLocaleString(difficultyCopy.locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+        : average.toFixed(1)
+      : "-";
     totalRoot.textContent = total
-      ? `${total} ${difficultyCopy.responses} · ${difficultyCopy.average} ${Number.isFinite(average) ? average.toFixed(1) : "-"}`
+      ? `${total} ${responses} · ${difficultyCopy.average} ${formattedAverage}`
       : difficultyCopy.waiting;
   }
 }

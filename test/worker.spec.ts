@@ -234,6 +234,30 @@ describe("Call-in Worker", () => {
     expect((await SELF.fetch("https://example.com/e/00000000000000000000000000000000/")).status).toBe(404);
   });
 
+  it("creates French events and a French demonstration", async () => {
+    const createdResponse = await SELF.fetch("https://example.com/api/events", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ title: "Rencontre BordeauxJS", deckUrl: "https://example.com/slides", locale: "fr" }),
+    });
+    expect(createdResponse.status).toBe(201);
+    const created = await createdResponse.json<{ eventId: string }>();
+    const response = await SELF.fetch(`https://example.com/api/events/${created.eventId}/config`);
+    const config = await response.json<{ locale: string; difficulty: { labels: string[] }; question: { title: string }; moderation: { codeOfConduct: { title: string } } }>();
+    expect(config.locale).toBe("fr");
+    expect(config.difficulty.labels).toContain("Je décroche");
+    expect(config.question.title).toBe("Posez vos questions");
+    expect(config.moderation.codeOfConduct.title).toBe("Gardons une discussion constructive");
+
+    const demoResponse = await SELF.fetch("https://example.com/api/demo/fr/config");
+    const demo = await demoResponse.json<{ locale: string; deckUrl: string }>();
+    expect(demo.locale).toBe("fr");
+    expect(demo.deckUrl).toBe("https://example.com/fr/demo/slides/");
+    const stateResponse = await SELF.fetch("https://example.com/api/demo/fr/state");
+    const state = await stateResponse.json<{ questions: Array<{ text: string }> }>();
+    expect(state.questions.some((question) => question.text.includes("application pour participer"))).toBe(true);
+  });
+
   it("stores an uploaded PDF inside the event and serves it until expiry", async () => {
     const form = new FormData();
     form.set("title", "Uploaded deck");

@@ -1,5 +1,7 @@
 # Call-in · 簡單叩應
 
+🇫🇷 [Lire la présentation et les instructions de ce fork en français](./README.fr.md).
+
 <picture>
   <img src="./public/brand/call-in-mark.svg" width="128" alt="Call-in abstract bell-curve mark">
 </picture>

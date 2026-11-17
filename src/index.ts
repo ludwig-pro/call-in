@@ -19,11 +19,12 @@ const hostedEventLifetimeMs = 7 * 24 * 60 * 60 * 1000;
 const maxHostedPdfBytes = 20 * 1024 * 1024;
 const permanentDemoCreatedAt = Date.UTC(2026, 7, 27);
 const permanentDemoSeedVersion = "2026-08-27-v2";
+type HostedLocale = "zh-Hant-TW" | "en" | "fr";
 
 type SessionApiContext = {
   stub: DurableObjectStub<LiveSession>;
   hostedEventId?: string;
-  demoLocale?: "zh-Hant-TW" | "en";
+  demoLocale?: HostedLocale;
 };
 
 export default {
@@ -62,7 +63,7 @@ export default {
         if (!demoApi) return withCors(jsonError("not found", 404), request, env);
         const stub = env.LIVE_SESSION.getByName(`demo:permanent:${demoApi.locale}`);
         await stub.ensureDemoSession(
-          permanentDemoConfig(demoApi.locale),
+          permanentDemoConfig(demoApi.locale, url.origin),
           Date.now(),
           nextTaipeiMidnight(Date.now()),
           permanentDemoSeedVersion,
@@ -111,7 +112,7 @@ async function createHostedEvent(request: Request, env: Env): Promise<Response> 
   let title = "";
   let description = "";
   let deckUrl = "";
-  let locale: "zh-Hant-TW" | "en" = "zh-Hant-TW";
+  let locale: HostedLocale = "zh-Hant-TW";
   let deckFile: File | null = null;
   if (contentType.includes("multipart/form-data")) {
     const form = await request.formData();
@@ -209,7 +210,7 @@ async function handleSessionApi(
   const url = new URL(request.url);
   if (path === "/config" && request.method === "GET") {
     const config = demoLocale
-      ? permanentDemoConfig(demoLocale)
+      ? permanentDemoConfig(demoLocale, url.origin)
       : await stub.eventConfig();
     return withCors(Response.json(config), request, env);
   }
@@ -217,7 +218,7 @@ async function handleSessionApi(
     const target = hostedEventId
       ? `${url.origin}/e/${hostedEventId}/`
       : demoLocale
-        ? `${url.origin}/${demoLocale === "en" ? "en/" : ""}demo/audience/`
+        ? `${url.origin}/${demoLocale === "en" ? "en/" : demoLocale === "fr" ? "fr/" : ""}demo/audience/`
         : `${url.origin}/`;
     const svg = await QRCode.toString(target, {
       type: "svg",
@@ -436,7 +437,7 @@ function hostedEventConfig(
   description: string,
   deckUrl: string,
   createdAt: number,
-  locale: "zh-Hant-TW" | "en",
+  locale: HostedLocale,
 ): PublicEventConfig {
   const english = locale === "en";
   return validateEventConfig({
@@ -524,27 +525,69 @@ function hostedEventConfig(
           { id: "pause", emoji: "🤔", label: "等我一下" },
         ],
     polls: [],
+    ...(locale === "fr" ? {
+      description: description || "Scannez le QR code pour partager vos questions, vos réactions et votre compréhension.",
+      dashboardTitle: `${title} · Réactions en direct`,
+      difficulty: {
+        title: "Comment trouvez-vous le rythme de la présentation ?",
+        labels: ["Trop facile", "Facile", "Adapté", "Difficile", "Je décroche"],
+      },
+      question: {
+        title: "Posez vos questions",
+        placeholder: "Qu’aimeriez-vous éclaircir ou approfondir ?",
+        maxPerDevice: 20,
+        lenses: [
+          { id: "clarify", label: "Éclaircir", description: "Mieux comprendre une idée ou une méthode" },
+          { id: "chorus", label: "Moi aussi", description: "Voir qui partage cette question" },
+          { id: "bridge", label: "Faire le lien", description: "Comparer deux pistes ou compromis" },
+          { id: "keeper", label: "À retenir", description: "Conserver une condition, un risque ou une limite" },
+        ],
+      },
+      moderation: {
+        enabled: true, presentationDelaySeconds: 8, questionCooldownSeconds: 20,
+        questionsPerTenMinutes: 5, slowModeSeconds: 90,
+        flags: { enabled: true, maxPerDevice: 8, autoHoldMin: 3, autoHoldMax: 5, autoHoldParticipantRatio: 0.03 },
+        codeOfConduct: {
+          version: new Date(createdAt).toISOString().slice(0, 10),
+          title: "Gardons une discussion constructive",
+          summary: "Discutez des idées, des méthodes et des conclusions pour faire avancer l’échange.",
+          rules: [
+            "Pas d’attaques personnelles, de harcèlement, de menaces ni de divulgation d’informations privées.",
+            "Pas de spam, d’usurpation d’identité ni de perturbation volontaire.",
+            "La modération peut retenir ou masquer du contenu et limiter les questions pendant l’événement.",
+          ],
+        },
+      },
+      reactions: [
+        { id: "applause", emoji: "👏", label: "Bravo" },
+        { id: "insight", emoji: "💡", label: "Intéressant" },
+        { id: "resonate", emoji: "❤️", label: "Je suis d’accord" },
+        { id: "pause", emoji: "🤔", label: "Un instant" },
+      ],
+    } : {}),
   });
 }
 
-function permanentDemoConfig(locale: "zh-Hant-TW" | "en"): PublicEventConfig {
+function permanentDemoConfig(locale: HostedLocale, origin: string): PublicEventConfig {
   const english = locale === "en";
   return hostedEventConfig(
     EVENT_CONFIG.eventId,
-    english ? "Call-in permanent demo" : "Call-in 常駐 Demo",
-    english
+    locale === "fr" ? "Démonstration Call-in" : english ? "Call-in permanent demo" : "Call-in 常駐 Demo",
+    locale === "fr"
+      ? "Scannez le QR code et essayez les interactions en direct."
+      : english
       ? "Scan the QR code and try the same live interaction flow used in a real event."
       : "掃描 QR Code，直接體驗正式活動使用的難度、提問與即時反應流程。",
-    "https://mashbean.net/decks/isf-0427/",
+    locale === "fr" ? `${origin}/fr/demo/slides/` : "https://mashbean.net/decks/isf-0427/",
     permanentDemoCreatedAt,
     locale,
   );
 }
 
-function parseDemoApi(url: URL): { locale: "zh-Hant-TW" | "en"; path: string } | null {
-  const localized = url.pathname.match(/^\/api\/demo\/(zh|en)(\/.*)$/);
+function parseDemoApi(url: URL): { locale: HostedLocale; path: string } | null {
+  const localized = url.pathname.match(/^\/api\/demo\/(zh|en|fr)(\/.*)$/);
   if (localized) {
-    return { locale: localized[1] === "en" ? "en" : "zh-Hant-TW", path: localized[2]! };
+    return { locale: localized[1] === "fr" ? "fr" : localized[1] === "en" ? "en" : "zh-Hant-TW", path: localized[2]! };
   }
   const legacyPath = url.pathname.slice("/api/demo".length);
   if (!legacyPath.startsWith("/")) return null;
@@ -590,7 +633,7 @@ function parseHostedPage(pathname: string): { eventId: string; assetPath: string
 }
 
 function demoAssetPath(pathname: string): string | null {
-  const match = pathname.match(/^\/(?:en\/)?demo\/(audience|dashboard)\/?$/);
+  const match = pathname.match(/^\/(?:(?:en|fr)\/)?demo\/(audience|dashboard)\/?$/);
   if (!match) return null;
   return match[1] === "audience" ? "/audience/" : "/dashboard/";
 }
@@ -600,8 +643,9 @@ function formText(form: FormData, key: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function normalizeHostedLocale(value: string): "zh-Hant-TW" | "en" {
-  return value.toLowerCase().startsWith("en") ? "en" : "zh-Hant-TW";
+function normalizeHostedLocale(value: string): HostedLocale {
+  const locale = value.toLowerCase();
+  return locale.startsWith("fr") ? "fr" : locale.startsWith("en") ? "en" : "zh-Hant-TW";
 }
 
 function hostedPublicOrigin(request: Request): string {

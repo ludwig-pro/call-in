@@ -1,9 +1,10 @@
 import { eventApi, eventContext, eventPage } from "../event-context.js";
+import { localizeConfig } from "../i18n.js";
 
-const config = await fetch(eventApi("/config")).then((response) => {
+const config = localizeConfig(await fetch(eventApi("/config")).then((response) => {
   if (!response.ok) throw new Error("config unavailable");
   return response.json();
-});
+}));
 const params = new URLSearchParams(location.search);
 const requestedDeck = params.get("deck");
 const deckUrl = validDeckUrl(requestedDeck) ? requestedDeck : config.deckUrl;
@@ -18,8 +19,11 @@ const toolbarPeek = document.querySelector("[data-toolbar-peek]");
 const toolbarPeekLabel = document.querySelector("[data-toolbar-peek-label]");
 const embedNote = document.querySelector("[data-embed-note]");
 const dashboardPane = document.querySelector(".dashboard-pane");
+const french = config.locale?.toLowerCase().startsWith("fr");
 const english = config.locale?.toLowerCase().startsWith("en");
-const labels = english
+const labels = french
+  ? { presenter: "Présentation", home: "Accueil Call-in", loading: "Chargement de la présentation…", loaded: "Chargement de la présentation demandé", pdfPage: (page, pages) => `PDF ${page} / ${pages}`, open: "Ouvrir la présentation", audience: "Public", moderate: "Modération", hideDashboard: "Masquer les réactions", showDashboard: "Afficher les réactions", fullscreen: "Plein écran", hideToolbar: "Masquer la barre d’outils", showToolbar: "Afficher la barre d’outils", toolbar: "Outils" }
+  : english
   ? { presenter: "Presenter", home: "Call-in product home", loading: "Loading slides…", loaded: "Slide load requested", pdfPage: (page, pages) => `PDF ${page} / ${pages}`, open: "Open deck", audience: "Audience", moderate: "Moderate", hideDashboard: "Hide responses", showDashboard: "Show responses", fullscreen: "Fullscreen", hideToolbar: "Hide toolbar", showToolbar: "Show presenter toolbar", toolbar: "Toolbar" }
   : { presenter: "講者頁", home: "Call-in 產品主頁", loading: "正在載入簡報…", loaded: "已送出簡報載入要求", pdfPage: (page, pages) => `PDF ${page} / ${pages}`, open: "另開簡報", audience: "觀眾頁", moderate: "主持", hideDashboard: "隱藏互動", showDashboard: "顯示互動", fullscreen: "全螢幕", hideToolbar: "收起工具列", showToolbar: "顯示講者工具列", toolbar: "工具列" };
 
@@ -32,9 +36,9 @@ document.querySelector("[data-audience-link]").href = eventPage("/");
 document.querySelector("[data-moderator-link]").href = eventPage("/moderate/");
 document.querySelector("[data-dashboard-frame]").src = eventPage("/dashboard/");
 
-document.documentElement.lang = english ? "en" : "zh-Hant-TW";
+document.documentElement.lang = french ? "fr" : english ? "en" : "zh-Hant-TW";
 document.title = `${config.title} · ${labels.presenter}`;
-productHome.href = english ? "/en/" : "/";
+productHome.href = french ? "/fr/" : english ? "/en/" : "/";
 productHome.setAttribute("aria-label", labels.home);
 document.querySelector("[data-event-title]").textContent = config.title;
 status.textContent = labels.loading;
@@ -48,12 +52,20 @@ toolbarToggle.textContent = labels.hideToolbar;
 toolbarPeek.setAttribute("aria-label", labels.showToolbar);
 toolbarPeek.title = labels.showToolbar;
 toolbarPeekLabel.textContent = labels.toolbar;
+if (french) {
+  document.querySelector(".present-toolbar nav").setAttribute("aria-label", "Outils de présentation");
+  document.querySelector(".deck-pane").setAttribute("aria-label", "Présentation");
+  deckFrame.title = "Présentation";
+  dashboardPane.setAttribute("aria-label", "Réactions en direct");
+  document.querySelector("[data-dashboard-frame]").title = "Tableau de bord des réactions";
+  embedNote.textContent = "Si la présentation reste vide, son site interdit peut-être l’intégration. Utilisez « Ouvrir la présentation » ci-dessus.";
+}
 // The same-origin PDF viewer opens deck links in new tabs; without this flag the
 // sandboxed frame would trap those tabs in the sandbox. External decks keep the
 // strict sandbox from the HTML attribute.
 if (hostedPdf) deckFrame.sandbox.add("allow-popups-to-escape-sandbox");
 deckFrame.src = hostedPdf
-  ? `/present/pdf-viewer?file=${encodeURIComponent(deckUrl)}&lang=${english ? "en" : "zh"}`
+  ? `/present/pdf-viewer?file=${encodeURIComponent(deckUrl)}&lang=${french ? "fr" : english ? "en" : "zh"}`
   : deckUrl;
 openDeck.href = deckUrl;
 syncToolbarPeekPosition();

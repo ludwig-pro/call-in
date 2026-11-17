@@ -7,7 +7,9 @@ const urlInput = form.querySelector('input[name="deckUrl"]');
 const fileLabel = document.querySelector("[data-file-label]");
 const fileLabelDefault = fileLabel.textContent;
 const dropZone = document.querySelector("[data-drop-zone]");
+const french = document.documentElement.lang.startsWith("fr");
 const english = document.documentElement.lang.startsWith("en");
+const t = (en, zh, fr) => french ? fr : english ? en : zh;
 const receiptLinks = {};
 const copyDefault = new Map();
 let sourceMode = "upload";
@@ -39,21 +41,21 @@ form.addEventListener("submit", async (event) => {
   const file = fileInput.files?.[0];
   if (sourceMode === "upload") {
     data.delete("deckUrl");
-    if (!file) return showError(english ? "Choose a PDF to upload." : "請選擇要上傳的 PDF。");
-    if (file.size > 20 * 1024 * 1024) return showError(english ? "The PDF must be 20MB or smaller." : "PDF 不能超過 20MB。");
-    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") return showError(english ? "Choose a PDF file." : "請選擇 PDF 檔案。");
+    if (!file) return showError(t("Choose a PDF to upload.", "請選擇要上傳的 PDF。", "Choisissez un PDF à importer."));
+    if (file.size > 20 * 1024 * 1024) return showError(t("The PDF must be 20MB or smaller.", "PDF 不能超過 20MB。", "Le PDF ne doit pas dépasser 20 Mo."));
+    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") return showError(t("Choose a PDF file.", "請選擇 PDF 檔案。", "Choisissez un fichier PDF."));
   } else {
     data.delete("deckFile");
     const deckUrl = normalizeDeckUrl(String(data.get("deckUrl") || ""));
-    if (!deckUrl) return showError(english ? "Paste your deck URL." : "請貼上簡報網址。");
+    if (!deckUrl) return showError(t("Paste your deck URL.", "請貼上簡報網址。", "Collez l’adresse de votre présentation."));
     data.set("deckUrl", deckUrl);
   }
   button.disabled = true;
-  message.textContent = english ? (sourceMode === "upload" ? "Uploading your PDF and creating the event…" : "Creating your event…") : (sourceMode === "upload" ? "正在上傳 PDF 並建立叩應…" : "正在建立叩應…");
+  message.textContent = t(sourceMode === "upload" ? "Uploading your PDF and creating the event…" : "Creating your event…", sourceMode === "upload" ? "正在上傳 PDF 並建立叩應…" : "正在建立叩應…", sourceMode === "upload" ? "Import du PDF et création de l’événement…" : "Création de l’événement…");
   try {
     const response = await fetch("/api/events", { method: "POST", body: data });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || (english ? "The event was not created" : "叩應沒有建立成功"));
+    if (!response.ok) throw new Error(result.error || t("The event was not created", "叩應沒有建立成功", "L’événement n’a pas été créé"));
     showReceipt(result);
   } catch (error) {
     message.textContent = humanError(error);
@@ -68,10 +70,10 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
     if (!value) return;
     try {
       await navigator.clipboard.writeText(value);
-      button.textContent = english ? "Copied" : "已複製";
+      button.textContent = t("Copied", "已複製", "Copié");
       setTimeout(() => { button.textContent = copyDefault.get(button); }, 1600);
     } catch {
-      button.textContent = english ? "Copy the link above" : "請長按上方連結複製";
+      button.textContent = t("Copy the link above", "請長按上方連結複製", "Copiez le lien ci-dessus");
     }
   });
 });
@@ -108,13 +110,15 @@ function showReceipt(result) {
   receiptLinks.audience = result.audienceUrl;
   receiptLinks.setup = result.setupUrl;
   receiptLinks.moderator = result.moderatorUrl;
-  document.querySelector("[data-receipt-title]").textContent = english ? `${result.title} is ready` : `${result.title} 已建立`;
+  document.querySelector("[data-receipt-title]").textContent = t(`${result.title} is ready`, `${result.title} 已建立`, `${result.title} est prêt`);
   setLink("[data-presenter-link]", result.presenterUrl);
   setLink("[data-audience-link]", result.audienceUrl, shortUrl(result.audienceUrl));
   setLink("[data-setup-link]", result.setupUrl);
   setLink("[data-moderator-link]", result.moderatorUrl);
   document.querySelector("[data-audience-qr]").src = `/api/events/${result.eventId}/qr.svg`;
-  document.querySelector("[data-expiry]").textContent = english
+  document.querySelector("[data-expiry]").textContent = french
+    ? `Cet événement et le PDF importé seront supprimés automatiquement le ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" }).format(new Date(result.expiresAt))}.`
+    : english
     ? `This event and its uploaded deck will be deleted automatically on ${new Intl.DateTimeFormat("en", { dateStyle: "long", timeStyle: "short" }).format(new Date(result.expiresAt))}.`
     : `這場叩應與上傳的簡報會在 ${new Intl.DateTimeFormat("zh-TW", { dateStyle: "long", timeStyle: "short" }).format(new Date(result.expiresAt))} 自動刪除。`;
   createPanel.hidden = true;
@@ -134,16 +138,16 @@ function normalizeDeckUrl(value) {
   return parsed.toString();
 }
 function shortUrl(value) { return value.replace(/^https?:\/\//, "").replace(/\/$/, ""); }
-function formatBytes(value) { return value < 1024 * 1024 ? `${Math.ceil(value / 1024)}KB` : `${(value / 1024 / 1024).toFixed(1)}MB`; }
+function formatBytes(value) { return value < 1024 * 1024 ? `${Math.ceil(value / 1024)} ${french ? "Ko" : "KB"}` : `${(value / 1024 / 1024).toFixed(1)} ${french ? "Mo" : "MB"}`; }
 function humanError(error) {
   const text = String(error?.message || error);
-  if (text.includes("20 MB") || text.includes("too large")) return english ? "The PDF must be 20MB or smaller." : "PDF 不能超過 20MB。";
-  if (text.includes("valid PDF") || text.includes("must be a PDF")) return english ? "That file is not a valid PDF." : "這個檔案不是有效的 PDF。";
-  if (text.includes("HTTPS")) return english ? "The deck URL must use https://" : "簡報網址需要使用 https://";
-  if (text.includes("complete web address")) return english ? "Paste a complete URL, such as https://…" : "請貼上完整的簡報網址，例如 https://…";
-  if (text.includes("creation limit") || text.includes("upload limit")) return english ? "Call-in is busy right now. Try again later." : "目前建立叩應的人比較多，請稍後再試。";
-  if (text.includes("title")) return english ? "Add an event title and a deck." : "請填寫活動名稱並放入簡報。";
-  return english ? "The event was not created. Check the deck and try again." : "叩應沒有建立成功，請檢查簡報後再試一次。";
+  if (text.includes("20 MB") || text.includes("too large")) return t("The PDF must be 20MB or smaller.", "PDF 不能超過 20MB。", "Le PDF ne doit pas dépasser 20 Mo.");
+  if (text.includes("valid PDF") || text.includes("must be a PDF")) return t("That file is not a valid PDF.", "這個檔案不是有效的 PDF。", "Ce fichier n’est pas un PDF valide.");
+  if (text.includes("HTTPS")) return t("The deck URL must use https://", "簡報網址需要使用 https://", "L’adresse doit commencer par https://");
+  if (text.includes("complete web address")) return t("Paste a complete URL, such as https://…", "請貼上完整的簡報網址，例如 https://…", "Collez une adresse complète, par exemple https://…");
+  if (text.includes("creation limit") || text.includes("upload limit")) return t("Call-in is busy right now. Try again later.", "目前建立叩應的人比較多，請稍後再試。", "Le service est occupé. Réessayez plus tard.");
+  if (text.includes("title")) return t("Add an event title and a deck.", "請填寫活動名稱並放入簡報。", "Ajoutez un titre et une présentation.");
+  return t("The event was not created. Check the deck and try again.", "叩應沒有建立成功，請檢查簡報後再試一次。", "L’événement n’a pas été créé. Vérifiez la présentation et réessayez.");
 }
 
 setSourceMode("upload");
