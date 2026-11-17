@@ -12,7 +12,12 @@ const english = document.documentElement.lang.startsWith("en");
 const t = (en, zh, fr) => french ? fr : english ? en : zh;
 const receiptLinks = {};
 const copyDefault = new Map();
-let sourceMode = "upload";
+const startTitle = document.querySelector(".start-card h3");
+const startDescription = document.querySelector(".start-card p");
+const startTitleDefault = startTitle.textContent;
+const startDescriptionDefault = startDescription.textContent;
+const initialSourceMode = document.querySelector('[data-source-tab][aria-selected="true"]')?.dataset.sourceTab || "upload";
+let sourceMode = initialSourceMode;
 
 document.querySelectorAll("[data-source-tab]").forEach((tab) => {
   tab.addEventListener("click", () => setSourceMode(tab.dataset.sourceTab));
@@ -44,11 +49,14 @@ form.addEventListener("submit", async (event) => {
     if (!file) return showError(t("Choose a PDF to upload.", "請選擇要上傳的 PDF。", "Choisissez un PDF à importer."));
     if (file.size > 20 * 1024 * 1024) return showError(t("The PDF must be 20MB or smaller.", "PDF 不能超過 20MB。", "Le PDF ne doit pas dépasser 20 Mo."));
     if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") return showError(t("Choose a PDF file.", "請選擇 PDF 檔案。", "Choisissez un fichier PDF."));
-  } else {
+  } else if (sourceMode === "url") {
     data.delete("deckFile");
     const deckUrl = normalizeDeckUrl(String(data.get("deckUrl") || ""));
     if (!deckUrl) return showError(t("Paste your deck URL.", "請貼上簡報網址。", "Collez l’adresse de votre présentation."));
     data.set("deckUrl", deckUrl);
+  } else {
+    data.delete("deckFile");
+    data.delete("deckUrl");
   }
   button.disabled = true;
   message.textContent = t(sourceMode === "upload" ? "Uploading your PDF and creating the event…" : "Creating your event…", sourceMode === "upload" ? "正在上傳 PDF 並建立叩應…" : "正在建立叩應…", sourceMode === "upload" ? "Import du PDF et création de l’événement…" : "Création de l’événement…");
@@ -84,7 +92,7 @@ document.querySelectorAll("[data-create-another]").forEach((link) => {
     form.reset();
     fileLabel.textContent = fileLabelDefault;
     message.textContent = "";
-    setSourceMode("upload");
+    setSourceMode(initialSourceMode);
     receipt.hidden = true;
     createPanel.hidden = false;
     history.pushState(null, "", "#create");
@@ -94,7 +102,7 @@ document.querySelectorAll("[data-create-another]").forEach((link) => {
 });
 
 function setSourceMode(mode) {
-  sourceMode = mode === "url" ? "url" : "upload";
+  sourceMode = mode === "url" || mode === "none" ? mode : "upload";
   document.querySelectorAll("[data-source-tab]").forEach((tab) => tab.setAttribute("aria-selected", String(tab.dataset.sourceTab === sourceMode)));
   document.querySelectorAll("[data-source-panel]").forEach((panel) => { panel.hidden = panel.dataset.sourcePanel !== sourceMode; });
   fileInput.disabled = sourceMode !== "upload";
@@ -116,11 +124,14 @@ function showReceipt(result) {
   setLink("[data-setup-link]", result.setupUrl);
   setLink("[data-moderator-link]", result.moderatorUrl);
   document.querySelector("[data-audience-qr]").src = `/api/events/${result.eventId}/qr.svg`;
+  startTitle.textContent = result.deckMode === "none" ? t("Follow live questions", "查看即時問題", "Suivre les questions en direct") : startTitleDefault;
+  startDescription.textContent = result.deckMode === "none" ? t("Open the live dashboard for this event.", "開啟這場活動的即時看板。", "Ouvrez le tableau de bord de l’événement.") : startDescriptionDefault;
+  const expiryDate = new Date(result.expiresAt);
   document.querySelector("[data-expiry]").textContent = french
-    ? `Cet événement et le PDF importé seront supprimés automatiquement le ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" }).format(new Date(result.expiresAt))}.`
+    ? `Cet événement${result.deckMode === "upload" ? " et le PDF importé seront supprimés" : " sera supprimé"} automatiquement le ${new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" }).format(expiryDate)}.`
     : english
-    ? `This event and its uploaded deck will be deleted automatically on ${new Intl.DateTimeFormat("en", { dateStyle: "long", timeStyle: "short" }).format(new Date(result.expiresAt))}.`
-    : `這場叩應與上傳的簡報會在 ${new Intl.DateTimeFormat("zh-TW", { dateStyle: "long", timeStyle: "short" }).format(new Date(result.expiresAt))} 自動刪除。`;
+    ? `This event${result.deckMode === "upload" ? " and its uploaded deck" : ""} will be deleted automatically on ${new Intl.DateTimeFormat("en", { dateStyle: "long", timeStyle: "short" }).format(expiryDate)}.`
+    : `這場叩應${result.deckMode === "upload" ? "與上傳的簡報" : ""}會在 ${new Intl.DateTimeFormat("zh-TW", { dateStyle: "long", timeStyle: "short" }).format(expiryDate)} 自動刪除。`;
   createPanel.hidden = true;
   receipt.hidden = false;
   receipt.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -146,8 +157,8 @@ function humanError(error) {
   if (text.includes("HTTPS")) return t("The deck URL must use https://", "簡報網址需要使用 https://", "L’adresse doit commencer par https://");
   if (text.includes("complete web address")) return t("Paste a complete URL, such as https://…", "請貼上完整的簡報網址，例如 https://…", "Collez une adresse complète, par exemple https://…");
   if (text.includes("creation limit") || text.includes("upload limit")) return t("Call-in is busy right now. Try again later.", "目前建立叩應的人比較多，請稍後再試。", "Le service est occupé. Réessayez plus tard.");
-  if (text.includes("title")) return t("Add an event title and a deck.", "請填寫活動名稱並放入簡報。", "Ajoutez un titre et une présentation.");
+  if (text.includes("title")) return t("Add an event title.", "請填寫活動名稱。", "Ajoutez un titre à l’événement.");
   return t("The event was not created. Check the deck and try again.", "叩應沒有建立成功，請檢查簡報後再試一次。", "L’événement n’a pas été créé. Vérifiez la présentation et réessayez.");
 }
 
-setSourceMode("upload");
+setSourceMode(initialSourceMode);

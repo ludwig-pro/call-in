@@ -27,7 +27,7 @@ describe("Call-in Worker", () => {
     const audiencePage = await SELF.fetch("https://example.com/demo/audience/");
     const dashboardPage = await SELF.fetch("https://example.com/demo/dashboard/");
     expect(audiencePage.status).toBe(200);
-    expect(await audiencePage.text()).toContain("Call-in 簡單叩應");
+    expect(await audiencePage.text()).toContain("Posez votre question");
     expect(dashboardPage.status).toBe(200);
     expect(await dashboardPage.text()).toContain("data-qr-open");
 
@@ -179,7 +179,7 @@ describe("Call-in Worker", () => {
     const audiencePage = await SELF.fetch(created.audienceUrl);
     const presenterPage = await SELF.fetch(created.presenterUrl);
     expect(audiencePage.status).toBe(200);
-    expect(await audiencePage.text()).toContain("Call-in 簡單叩應");
+    expect(await audiencePage.text()).toContain("Posez votre question");
     expect(presenterPage.status).toBe(200);
     expect(await presenterPage.text()).toContain("Call-in 講者頁");
 
@@ -375,7 +375,7 @@ describe("Call-in Worker", () => {
     expect(second.participant?.publicLabel).toBe(first.participant?.publicLabel);
   });
 
-  it("requires code-of-conduct acceptance before a free-text question", async () => {
+  it("accepts legacy question context without requiring a registration screen", async () => {
     const response = await SELF.fetch("https://example.com/api/question", {
       method: "POST",
       headers: jsonHeaders,
@@ -386,9 +386,9 @@ describe("Call-in Worker", () => {
         difficulty: 3,
       }),
     });
-    expect(response.status).toBe(400);
-    expect(await response.json<{ error: string }>()).toEqual({
-      error: "code of conduct must be accepted",
+    expect(response.status).toBe(200);
+    expect((await response.json<{ submission: unknown }>()).submission).toMatchObject({
+      lens: "clarify", difficulty: 3,
     });
   });
 

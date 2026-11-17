@@ -154,7 +154,8 @@
               <label>活動名稱<input name="title" maxlength="160" required placeholder="例如：AI 與公共參與" autocomplete="off" /></label>
               <fieldset class="deck-source">
                 <legend>你的簡報</legend>
-                <div class="source-tabs" role="tablist" aria-label="選擇簡報來源"><button type="button" role="tab" aria-selected="true" data-source-tab="upload">上傳 PDF</button><button type="button" role="tab" aria-selected="false" data-source-tab="url">貼上網址</button></div>
+                <div class="source-tabs" role="tablist" aria-label="選擇簡報來源"><button type="button" role="tab" aria-selected="true" data-source-tab="upload">上傳 PDF</button><button type="button" role="tab" aria-selected="false" data-source-tab="url">貼上網址</button><button type="button" role="tab" aria-selected="false" data-source-tab="none">不使用簡報</button></div>
+                <div class="source-panel" data-source-panel="none" hidden><p>只需要活動名稱即可開放提問。</p></div>
                 <div class="source-panel" data-source-panel="upload"><label class="drop-zone" data-drop-zone><input name="deckFile" type="file" accept="application/pdf,.pdf" /><span class="drop-icon" aria-hidden="true">↥</span><strong data-file-label>選擇 PDF 或拖曳到這裡</strong><small>最大 20MB，活動七天後自動刪除</small></label></div>
                 <div class="source-panel" data-source-panel="url" hidden><label>簡報網址<input name="deckUrl" type="url" maxlength="2048" placeholder="https://…" inputmode="url" autocomplete="url" /><small>支援 Google Slides、Canva、公開網頁簡報與 PDF 網址。</small></label></div>
               </fieldset>

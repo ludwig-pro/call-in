@@ -22,8 +22,8 @@ export type AudienceQuestion = {
   id: string;
   text: string;
   nickname: string;
-  lens: QuestionLens;
-  difficulty: number;
+  lens: QuestionLens | null;
+  difficulty: number | null;
   createdAt: number;
   upvotes: number;
 };
@@ -45,7 +45,7 @@ export type SessionSnapshot = {
 export type ParticipantProfile = {
   alias: string;
   publicLabel: string;
-  cocVersion: string;
+  cocVersion: string | null;
   questionState: ParticipantQuestionState;
   slowUntil: number | null;
 };

@@ -16,7 +16,7 @@ export function validateEventConfig(value: unknown): PublicEventConfig {
   assertText(config.title, "title", 160);
   assertText(config.description, "description", 500);
   assertText(config.dashboardTitle, "dashboardTitle", 160);
-  assertPublicUrl(config.deckUrl, "deckUrl");
+  if (config.deckUrl !== "") assertPublicUrl(config.deckUrl, "deckUrl");
   if (typeof config.locale !== "string" || !/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(config.locale)) {
     throw new Error("locale must be a language tag");
   }

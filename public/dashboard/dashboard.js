@@ -90,7 +90,7 @@ function render(state) {
           (question, index) => `
             <article>
               <div class="dashboard-question-head"><b>${question.id === newestId ? t("NEW", "最新") : String(index + 1).padStart(2, "0")}</b><span><time>${formatTime(question.createdAt)}</time> · ${t("Me too", "我也想問")} ${question.upvotes}</span></div>
-              <div class="question-tags"><span class="question-lens">${escapeHtml(lensLabels[question.lens] || lensLabels.clarify)}</span><span class="question-difficulty difficulty-${question.difficulty}">${question.difficulty} · ${escapeHtml(difficultyLabels[question.difficulty - 1] || difficultyLabels[2])}</span></div>
+              ${question.lens !== null && question.difficulty !== null ? `<div class="question-tags"><span class="question-lens">${escapeHtml(lensLabels[question.lens] || question.lens)}</span><span class="question-difficulty difficulty-${question.difficulty}">${question.difficulty} · ${escapeHtml(difficultyLabels[question.difficulty - 1])}</span></div>` : ""}
               <p>${escapeHtml(question.text)}</p>
               <small>${escapeHtml(question.nickname)}</small>
             </article>`,
