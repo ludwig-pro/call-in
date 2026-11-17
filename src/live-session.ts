@@ -648,7 +648,10 @@ export class LiveSession extends DurableObject<Env> {
   ): Promise<ParticipantState> {
     assertVoterId(voterId);
     const moderation = this.getEventConfig().moderation;
-    if (!moderation?.enabled) return { participant: null, questions: [] };
+    if (!moderation?.enabled) {
+      const { upvotedQuestionIds } = await this.participantState(voterId);
+      return { participant: null, questions: [], upvotedQuestionIds };
+    }
     const cleanedAlias = cleanText(alias, 24);
     if (cleanedAlias.length < 2) throw new Error("alias too short");
     if (cocVersion !== moderation.codeOfConduct.version) {
@@ -695,11 +698,23 @@ export class LiveSession extends DurableObject<Env> {
         WHERE q.voter_id = ?
         GROUP BY q.id
         ORDER BY q.created_at DESC
-        LIMIT 20
+        LIMIT 100
       `, voterId)
       .toArray()
       .map(toOwnQuestion);
-    return { participant: participant ? toParticipantProfile(participant) : null, questions };
+    const upvotedQuestionIds = this.ctx.storage.sql
+      .exec<{ question_id: string }>(
+        `SELECT qv.question_id
+         FROM question_votes qv
+         JOIN questions q ON q.id = qv.question_id
+         WHERE qv.voter_id = ? AND q.visibility = 'public'
+         ORDER BY q.created_at DESC
+         LIMIT 100`,
+        voterId,
+      )
+      .toArray()
+      .map((row) => row.question_id);
+    return { participant: participant ? toParticipantProfile(participant) : null, questions, upvotedQuestionIds };
   }
 
   async vote(pollId: string, optionIndex: number, voterId: string): Promise<SessionSnapshot> {
@@ -896,7 +911,7 @@ export class LiveSession extends DurableObject<Env> {
     return this.broadcastSnapshot(this.touch(snapshot));
   }
 
-  async upvote(questionId: string, voterId: string): Promise<SessionSnapshot> {
+  async upvote(questionId: string, voterId: string, supported?: boolean): Promise<SessionSnapshot> {
     assertVoterId(voterId);
     if (!isUuid(questionId)) throw new Error("invalid question");
     const snapshot = await this.snapshot();
@@ -916,7 +931,9 @@ export class LiveSession extends DurableObject<Env> {
       )
       .one();
     const question = snapshot.questions.find((candidate) => candidate.id === questionId);
-    if (priorVote.count === 0) {
+    const shouldSupport = supported ?? priorVote.count === 0;
+    if (shouldSupport === (priorVote.count !== 0)) return snapshot;
+    if (shouldSupport && priorVote.count === 0) {
       this.ctx.storage.sql.exec(
         "INSERT INTO question_votes (question_id, voter_id, created_at) VALUES (?, ?, ?)",
         questionId,
@@ -924,7 +941,7 @@ export class LiveSession extends DurableObject<Env> {
         Date.now(),
       );
       if (question) question.upvotes += 1;
-    } else {
+    } else if (!shouldSupport && priorVote.count !== 0) {
       this.ctx.storage.sql.exec(
         "DELETE FROM question_votes WHERE question_id = ? AND voter_id = ?",
         questionId,

@@ -58,6 +58,7 @@ export type OwnQuestion = AudienceQuestion & {
 export type ParticipantState = {
   participant: ParticipantProfile | null;
   questions: OwnQuestion[];
+  upvotedQuestionIds: string[];
 };
 
 export type QuestionSubmission = {
