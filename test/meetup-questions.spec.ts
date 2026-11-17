@@ -108,6 +108,56 @@ describe("meetup questions", () => {
     expect((await pending.json<{ submission: { visibility: string } }>()).submission.visibility).toBe("pending");
   });
 
+  it("returns only the current device's public upvotes before it has a participant profile", async () => {
+    const { stub, api } = await createEvent();
+    const author = crypto.randomUUID();
+    const fan = crypto.randomUUID();
+    const stranger = crypto.randomUUID();
+    const send = (path: string, body: object) => SELF.fetch(`${api}${path}`, {
+      method: "POST", headers, body: JSON.stringify(body),
+    });
+    const getMe = async (voterId: string) => (await send("/me", { voterId }))
+      .json<{ participant: unknown; questions: unknown[]; upvotedQuestionIds: string[] }>();
+    const created = await question(api, { text: "Question publique", nickname: "Lou", voterId: author });
+    const { submission } = await created.json<{ submission: { id: string } }>();
+
+    expect(await getMe(fan)).toEqual({ participant: null, questions: [], upvotedQuestionIds: [] });
+    expect((await send("/upvote", { questionId: submission.id, voterId: author })).status).toBe(400);
+    expect((await send("/upvote", { questionId: submission.id, voterId: fan })).status).toBe(200);
+    expect((await getMe(fan))).toEqual({ participant: null, questions: [], upvotedQuestionIds: [submission.id] });
+    expect((await getMe(stranger)).upvotedQuestionIds).toEqual([]);
+
+    // Two tabs may ask for the same state at once, even without browser locks.
+    const simultaneous = await Promise.all([1, 2].map(() => send("/upvote", {
+      questionId: submission.id, voterId: stranger, supported: true,
+    })));
+    expect(simultaneous.every((response) => response.status === 200)).toBe(true);
+    expect((await getMe(stranger)).upvotedQuestionIds).toEqual([submission.id]);
+    expect((await stub.snapshot()).questions[0]?.upvotes).toBe(2);
+    await Promise.all([1, 2].map(() => send("/upvote", {
+      questionId: submission.id, voterId: stranger, supported: false,
+    })));
+    expect((await getMe(stranger)).upvotedQuestionIds).toEqual([]);
+    expect((await stub.snapshot()).questions[0]?.upvotes).toBe(1);
+    expect((await send("/upvote", { questionId: submission.id, voterId: fan, supported: "yes" })).status).toBe(400);
+
+    await stub.moderateQuestion(submission.id, "hide", "other");
+    expect((await getMe(fan)).upvotedQuestionIds).toEqual([]);
+    expect((await stub.snapshot()).questions).toEqual([]);
+    expect((await send("/upvote", { questionId: submission.id, voterId: fan })).status).toBe(400);
+    await stub.moderateQuestion(submission.id, "restore", "other");
+    expect((await getMe(fan)).upvotedQuestionIds).toEqual([submission.id]);
+    expect((await send("/upvote", { questionId: submission.id, voterId: fan })).status).toBe(200);
+    expect((await getMe(fan)).upvotedQuestionIds).toEqual([]);
+
+    await stub.setSessionMode("approval");
+    const pendingResponse = await question(api, { text: "Question privée", nickname: "Alix", voterId: stranger });
+    const pending = await pendingResponse.json<{ submission: { id: string; visibility: string } }>();
+    expect(pending.submission.visibility).toBe("pending");
+    expect((await send("/upvote", { questionId: pending.submission.id, voterId: fan })).status).toBe(400);
+    expect(JSON.stringify(await stub.snapshot())).not.toContain("Question privée");
+  });
+
   it("notifies listeners of pending activity without exposing the pending question on the public socket", async () => {
     const { stub, api, token } = await createEvent();
     await stub.setSessionMode("approval");

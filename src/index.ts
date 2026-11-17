@@ -386,10 +386,11 @@ async function handleSessionApi(
   }
 
   if (path === "/upvote") {
-    if (typeof body.questionId !== "string" || typeof body.voterId !== "string") {
+    if (typeof body.questionId !== "string" || typeof body.voterId !== "string" ||
+        (body.supported !== undefined && typeof body.supported !== "boolean")) {
       return withCors(jsonError("invalid upvote", 400), request, env);
     }
-    return withCors(Response.json(await stub.upvote(body.questionId, body.voterId)), request, env);
+    return withCors(Response.json(await stub.upvote(body.questionId, body.voterId, body.supported)), request, env);
   }
 
   if (path === "/flag") {
