@@ -28,8 +28,15 @@ const labels = french
   : { presenter: "講者頁", home: "Call-in 產品主頁", loading: "正在載入簡報…", loaded: "已送出簡報載入要求", pdfPage: (page, pages) => `PDF ${page} / ${pages}`, open: "另開簡報", audience: "觀眾頁", moderate: "主持", hideDashboard: "隱藏互動", showDashboard: "顯示互動", fullscreen: "全螢幕", hideToolbar: "收起工具列", showToolbar: "顯示講者工具列", toolbar: "工具列" };
 
 const hostedPdf = isHostedPdf(deckUrl);
+const noDeck = !deckUrl;
+document.body.classList.toggle("no-deck", noDeck);
 if (hostedPdf) {
   embedNote.hidden = true;
+}
+if (noDeck) {
+  embedNote.hidden = true;
+  openDeck.hidden = true;
+  toggle.hidden = true;
 }
 
 document.querySelector("[data-audience-link]").href = eventPage("/");
@@ -41,7 +48,7 @@ document.title = `${config.title} · ${labels.presenter}`;
 productHome.href = french ? "/fr/" : english ? "/en/" : "/";
 productHome.setAttribute("aria-label", labels.home);
 document.querySelector("[data-event-title]").textContent = config.title;
-status.textContent = labels.loading;
+status.textContent = noDeck ? (french ? "Questions en direct" : english ? "Live questions" : "即時問題") : labels.loading;
 openDeck.textContent = labels.open;
 document.querySelector("[data-audience-link]").textContent = labels.audience;
 document.querySelector("[data-moderator-link]").textContent = labels.moderate;
@@ -64,14 +71,16 @@ if (french) {
 // sandboxed frame would trap those tabs in the sandbox. External decks keep the
 // strict sandbox from the HTML attribute.
 if (hostedPdf) deckFrame.sandbox.add("allow-popups-to-escape-sandbox");
-deckFrame.src = hostedPdf
-  ? `/present/pdf-viewer?file=${encodeURIComponent(deckUrl)}&lang=${french ? "fr" : english ? "en" : "zh"}`
-  : deckUrl;
-openDeck.href = deckUrl;
+if (!noDeck) {
+  deckFrame.src = hostedPdf
+    ? `/present/pdf-viewer?file=${encodeURIComponent(deckUrl)}&lang=${french ? "fr" : english ? "en" : "zh"}`
+    : deckUrl;
+  openDeck.href = deckUrl;
+}
 syncToolbarPeekPosition();
 new ResizeObserver(syncToolbarPeekPosition).observe(dashboardPane);
 deckFrame.addEventListener("load", () => {
-  status.textContent = labels.loaded;
+  if (!noDeck) status.textContent = labels.loaded;
 });
 window.addEventListener("message", (event) => {
   if (!hostedPdf || event.origin !== location.origin || event.source !== deckFrame.contentWindow) return;

@@ -26,7 +26,8 @@
           <label>Event title<input name="title" maxlength="160" required placeholder="For example: AI and public participation" autocomplete="off" /></label>
           <fieldset class="deck-source">
             <legend>Your slides</legend>
-            <div class="source-tabs" role="tablist" aria-label="Choose a slide source"><button type="button" role="tab" aria-selected="true" data-source-tab="upload">Upload PDF</button><button type="button" role="tab" aria-selected="false" data-source-tab="url">Paste URL</button></div>
+            <div class="source-tabs" role="tablist" aria-label="Choose a slide source"><button type="button" role="tab" aria-selected="true" data-source-tab="upload">Upload PDF</button><button type="button" role="tab" aria-selected="false" data-source-tab="url">Paste URL</button><button type="button" role="tab" aria-selected="false" data-source-tab="none">No slides</button></div>
+            <div class="source-panel" data-source-panel="none" hidden><p>A title is enough to open questions.</p></div>
             <div class="source-panel" data-source-panel="upload"><label class="drop-zone" data-drop-zone><input name="deckFile" type="file" accept="application/pdf,.pdf" /><span class="drop-icon" aria-hidden="true">↥</span><strong data-file-label>Choose a PDF or drop it here</strong><small>Up to 20MB · automatically deleted after seven days</small></label></div>
             <div class="source-panel" data-source-panel="url" hidden><label>Deck URL<input name="deckUrl" type="url" maxlength="2048" placeholder="https://…" inputmode="url" autocomplete="url" /><small>Google Slides, Canva, public web decks, and PDF URLs are supported.</small></label></div>
           </fieldset>

@@ -33,7 +33,7 @@ label small { color:#7181a2; font-weight:500; }
 input,textarea { width:100%; border:1px solid var(--line); border-radius:15px; padding:15px 16px; background:#030918; color:var(--ink); font:inherit; line-height:1.45; }
 input:focus,textarea:focus { outline:3px solid #7457ff66; border-color:#8f7aff; }
 textarea { resize:vertical; }
-.source-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:5px; margin-bottom:12px; padding:5px; border:1px solid var(--line); border-radius:16px; background:#030918; }
+.source-tabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; margin-bottom:12px; padding:5px; border:1px solid var(--line); border-radius:16px; background:#030918; }
 .source-tabs button { border:0; border-radius:11px; padding:13px; background:transparent; color:#8796b8; }
 .source-tabs button[aria-selected="true"] { background:linear-gradient(110deg,#704bff,#285fcf); color:#fff; box-shadow:0 8px 25px #0006; }
 .drop-zone { position:relative; display:grid; place-items:center; min-height:190px; padding:28px; border:1px dashed #4bdcff80; border-radius:20px; background:#071327; text-align:center; cursor:pointer; transition:border-color .2s,background .2s,transform .2s; }

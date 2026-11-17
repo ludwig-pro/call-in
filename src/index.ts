@@ -121,7 +121,7 @@ async function createHostedEvent(request: Request, env: Env): Promise<Response> 
     deckUrl = formText(form, "deckUrl");
     locale = normalizeHostedLocale(formText(form, "locale"));
     const upload = form.get("deckFile");
-    deckFile = upload instanceof File && upload.size ? upload : null;
+    deckFile = upload instanceof File && (upload.name || upload.size) ? upload : null;
   } else {
     const body = await readSmallJsonRequest(request);
     if (!isRecord(body)) return jsonError("invalid request", 400);
@@ -130,11 +130,9 @@ async function createHostedEvent(request: Request, env: Env): Promise<Response> 
     deckUrl = typeof body.deckUrl === "string" ? body.deckUrl.trim() : "";
     locale = normalizeHostedLocale(typeof body.locale === "string" ? body.locale : "");
   }
-  if (!title || (!deckUrl && !deckFile)) {
-    return jsonError("title and either a deck URL or PDF are required", 400);
-  }
+  if (!title) return jsonError("title is required", 400);
   if (deckFile) await assertHostedPdf(deckFile);
-  else assertHostedDeckUrl(deckUrl, request);
+  else if (deckUrl) assertHostedDeckUrl(deckUrl, request);
 
   const createdAt = Date.now();
   const limiter = env.LIVE_SESSION.getByName("hosted:creation-limiter");
@@ -188,7 +186,7 @@ async function createHostedEvent(request: Request, env: Env): Promise<Response> 
       presenterUrl: `${base}/present/`,
       setupUrl: `${base}/setup/#access=${adminToken}`,
       moderatorUrl: `${base}/moderate/#access=${moderatorToken}`,
-      deckMode: deckFile ? "upload" : "url",
+      deckMode: deckFile ? "upload" : deckUrl ? "url" : "none",
     },
     {
       status: 201,
@@ -352,13 +350,16 @@ async function handleSessionApi(
   }
 
   if (path === "/question") {
+    const hasLens = body.lens !== undefined && body.lens !== null;
+    const hasDifficulty = body.difficulty !== undefined && body.difficulty !== null;
     if (
       typeof body.text !== "string" ||
       (typeof body.nickname !== "string" && body.nickname !== undefined) ||
-      typeof body.lens !== "string" ||
-      typeof body.difficulty !== "number" ||
       typeof body.voterId !== "string" ||
-      !QUESTION_LENSES.has(body.lens as QuestionLens)
+      hasLens !== hasDifficulty ||
+      (hasLens && (typeof body.lens !== "string" || !QUESTION_LENSES.has(body.lens as QuestionLens))) ||
+      (hasDifficulty && typeof body.difficulty !== "number") ||
+      (!hasLens && typeof body.nickname !== "string")
     ) {
       return withCors(jsonError("invalid question", 400), request, env);
     }
@@ -367,8 +368,8 @@ async function handleSessionApi(
         await stub.ask(
           body.text,
           typeof body.nickname === "string" ? body.nickname : "",
-          body.lens as QuestionLens,
-          body.difficulty,
+          hasLens ? body.lens as QuestionLens : null,
+          hasDifficulty ? body.difficulty as number : null,
           body.voterId,
         ),
       ),

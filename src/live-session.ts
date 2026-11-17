@@ -29,8 +29,8 @@ type QuestionRow = {
   voter_id: string;
   text: string;
   nickname: string;
-  lens: QuestionLens;
-  difficulty: number;
+  lens: QuestionLens | null;
+  difficulty: number | null;
   created_at: number;
   upvotes: number;
   visibility: QuestionVisibility;
@@ -49,7 +49,7 @@ type ParticipantRow = {
   voter_id: string;
   alias: string;
   public_label: string;
-  coc_version: string;
+  coc_version: string | null;
   question_state: ParticipantQuestionState;
   slow_until: number | null;
   flags_agreed: number;
@@ -287,6 +287,33 @@ export class LiveSession extends DurableObject<Env> {
         INSERT INTO _sql_schema_migrations (id, applied_at) VALUES (8, ${Date.now()});
       `);
     }
+    if (version < 9) {
+      this.ctx.storage.transactionSync(() => {
+        this.ctx.storage.sql.exec(`
+          ALTER TABLE questions ADD COLUMN lens_nullable TEXT;
+          ALTER TABLE questions ADD COLUMN difficulty_nullable INTEGER;
+          UPDATE questions SET lens_nullable = lens, difficulty_nullable = difficulty;
+          ALTER TABLE questions DROP COLUMN lens;
+          ALTER TABLE questions DROP COLUMN difficulty;
+          ALTER TABLE questions RENAME COLUMN lens_nullable TO lens;
+          ALTER TABLE questions RENAME COLUMN difficulty_nullable TO difficulty;
+          ALTER TABLE participants ADD COLUMN coc_version_nullable TEXT;
+          ALTER TABLE participants ADD COLUMN coc_accepted_at_nullable INTEGER;
+          UPDATE participants SET coc_version_nullable = coc_version, coc_accepted_at_nullable = coc_accepted_at;
+          ALTER TABLE participants DROP COLUMN coc_version;
+          ALTER TABLE participants DROP COLUMN coc_accepted_at;
+          ALTER TABLE participants RENAME COLUMN coc_version_nullable TO coc_version;
+          ALTER TABLE participants RENAME COLUMN coc_accepted_at_nullable TO coc_accepted_at;
+        `);
+        if (this.ctx.storage.sql.exec("PRAGMA foreign_key_check").toArray().length) {
+          throw new Error("foreign key check failed during schema migration");
+        }
+        this.ctx.storage.sql.exec(
+          "INSERT INTO _sql_schema_migrations (id, applied_at) VALUES (9, ?)",
+          Date.now(),
+        );
+      });
+    }
   }
 
   eventConfig(): PublicEventConfig {
@@ -442,7 +469,8 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   private async seedDemoBaseline(config: PublicEventConfig, now: number): Promise<void> {
-    const difficultyCounts = [2, 5, 29, 7, 2];
+    const french = config.locale.toLowerCase().startsWith("fr");
+    const difficultyCounts = french ? [] : [2, 5, 29, 7, 2];
     let difficultyIndex = 0;
     for (let score = 1; score <= difficultyCounts.length; score += 1) {
       for (let count = 0; count < (difficultyCounts[score - 1] ?? 0); count += 1) {
@@ -457,20 +485,19 @@ export class LiveSession extends DurableObject<Env> {
     }
 
     const english = config.locale.toLowerCase().startsWith("en");
-    const french = config.locale.toLowerCase().startsWith("fr");
     const questions: Array<{
       text: string;
-      lens: QuestionLens;
-      difficulty: number;
+      lens: QuestionLens | null;
+      difficulty: number | null;
       upvotes: number;
     }> = french
       ? [
-          { text: "Faut-il installer une application pour participer ?", lens: "clarify", difficulty: 2, upvotes: 8 },
-          { text: "Le PDF et les réponses sont-ils supprimés après sept jours ?", lens: "keeper", difficulty: 3, upvotes: 6 },
-          { text: "Puis-je partager le lien de modération avec une autre personne ?", lens: "clarify", difficulty: 3, upvotes: 5 },
-          { text: "Que se passe-t-il si la connexion de la salle est instable ?", lens: "keeper", difficulty: 4, upvotes: 4 },
-          { text: "Peut-on aussi utiliser cet outil pour un atelier ?", lens: "bridge", difficulty: 2, upvotes: 7 },
-          { text: "Peut-on poser une question sans utiliser son vrai nom ?", lens: "chorus", difficulty: 3, upvotes: 5 },
+          { text: "Faut-il installer une application pour participer ?", lens: null, difficulty: null, upvotes: 8 },
+          { text: "Le PDF et les réponses sont-ils supprimés après sept jours ?", lens: null, difficulty: null, upvotes: 6 },
+          { text: "Puis-je partager le lien de modération avec une autre personne ?", lens: null, difficulty: null, upvotes: 5 },
+          { text: "Que se passe-t-il si la connexion de la salle est instable ?", lens: null, difficulty: null, upvotes: 4 },
+          { text: "Peut-on aussi utiliser cet outil pour un atelier ?", lens: null, difficulty: null, upvotes: 7 },
+          { text: "Peut-on poser une question sans utiliser son vrai nom ?", lens: null, difficulty: null, upvotes: 5 },
         ]
       : english
       ? [
@@ -542,7 +569,7 @@ export class LiveSession extends DurableObject<Env> {
       `)
       .toArray()
       .map(toAudienceQuestion);
-    const lines = rows.map((q) => [`question-${q.id}`, cell(`${q.nickname} · ${q.lens}`), cell(q.text)].join(","));
+    const lines = rows.map((q) => [`question-${q.id}`, cell(q.lens ? `${q.nickname} · ${q.lens}` : q.nickname), cell(q.text)].join(","));
     return ["id,interview,comment", ...lines].join("\n") + "\n";
   }
 
@@ -651,9 +678,7 @@ export class LiveSession extends DurableObject<Env> {
         now,
       );
     }
-    const state = await this.participantState(voterId);
-    await this.broadcastParticipantState(voterId, state);
-    return state;
+    return this.participantState(voterId);
   }
 
   async participantState(voterId: string): Promise<ParticipantState> {
@@ -744,121 +769,94 @@ export class LiveSession extends DurableObject<Env> {
   async ask(
     text: string,
     nickname: string,
-    lens: QuestionLens,
-    difficulty: number,
+    lens: QuestionLens | null,
+    difficulty: number | null,
     voterId: string,
   ): Promise<QuestionSubmission> {
     const cleanedText = cleanText(text, 280);
+    const cleanedNickname = cleanText(nickname, 24);
     assertVoterId(voterId);
     if (cleanedText.length < 4) throw new Error("question too short");
-    if (!QUESTION_LENSES.has(lens)) throw new Error("invalid question lens");
-    assertDifficulty(difficulty);
+    if ((lens === null) !== (difficulty === null)) throw new Error("invalid question context");
+    if (lens !== null && !QUESTION_LENSES.has(lens)) throw new Error("invalid question lens");
+    if (difficulty !== null) assertDifficulty(difficulty);
+
     const config = this.getEventConfig();
     const moderation = config.moderation;
-
-    const sessionMode = this.getSessionMode();
-    if (sessionMode === "paused") throw new Error("questions are paused");
-    if (sessionMode === "closed") throw new Error("session is closed");
-
-    const participant = this.getParticipantRow(voterId);
-    if (moderation?.enabled) {
-      if (!participant || participant.coc_version !== moderation.codeOfConduct.version) {
-        throw new Error("code of conduct must be accepted");
-      }
-      if (participant.question_state === "muted") throw new Error("question access is limited");
-    }
-
-    const prior = this.ctx.storage.sql
-      .exec<{ count: number }>("SELECT COUNT(*) AS count FROM questions WHERE voter_id = ?", voterId)
-      .one();
-    if (prior.count >= config.question.maxPerDevice) {
-      throw new Error("question limit reached");
-    }
-
     const now = Date.now();
-    if (moderation?.enabled) {
-      const recent = this.ctx.storage.sql
-        .exec<{ count: number }>(
-          "SELECT COUNT(*) AS count FROM questions WHERE voter_id = ? AND created_at >= ?",
-          voterId,
-          now - 10 * 60 * 1000,
-        )
-        .one().count;
-      if (recent >= moderation.questionsPerTenMinutes) throw new Error("question rate limit reached");
-      const latest = this.ctx.storage.sql
-        .exec<{ created_at: number }>(
-          "SELECT created_at FROM questions WHERE voter_id = ? ORDER BY created_at DESC LIMIT 1",
-          voterId,
-        )
-        .toArray()[0];
-      const isSlow = sessionMode === "slow" || Boolean(participant?.slow_until && participant.slow_until > now);
-      const cooldownSeconds = isSlow
-        ? Math.max(moderation.slowModeSeconds, moderation.questionCooldownSeconds)
-        : moderation.questionCooldownSeconds;
-      if (latest && now - latest.created_at < cooldownSeconds * 1000) {
-        throw new Error("question cooldown active");
+    const submission = this.ctx.storage.transactionSync(() => {
+      const sessionMode = this.getSessionMode();
+      if (sessionMode === "paused") throw new Error("questions are paused");
+      if (sessionMode === "closed") throw new Error("session is closed");
+
+      const participant = this.getParticipantRow(voterId);
+      if (participant?.question_state === "muted") throw new Error("question access is limited");
+      if (!cleanedNickname && lens === null) throw new Error("alias required");
+
+      const prior = this.ctx.storage.sql
+        .exec<{ count: number }>("SELECT COUNT(*) AS count FROM questions WHERE voter_id = ?", voterId)
+        .one();
+      if (prior.count >= config.question.maxPerDevice) throw new Error("question limit reached");
+
+      if (moderation?.enabled) {
+        const recent = this.ctx.storage.sql
+          .exec<{ count: number }>(
+            "SELECT COUNT(*) AS count FROM questions WHERE voter_id = ? AND created_at >= ?",
+            voterId,
+            now - 10 * 60 * 1000,
+          )
+          .one().count;
+        if (recent >= moderation.questionsPerTenMinutes) throw new Error("question rate limit reached");
+        const latest = this.ctx.storage.sql
+          .exec<{ created_at: number }>(
+            "SELECT created_at FROM questions WHERE voter_id = ? ORDER BY created_at DESC LIMIT 1",
+            voterId,
+          )
+          .toArray()[0];
+        const isSlow = sessionMode === "slow" || Boolean(participant?.slow_until && participant.slow_until > now);
+        const cooldownSeconds = isSlow
+          ? Math.max(moderation.slowModeSeconds, moderation.questionCooldownSeconds)
+          : moderation.questionCooldownSeconds;
+        if (latest && now - latest.created_at < cooldownSeconds * 1000) {
+          throw new Error("question cooldown active");
+        }
       }
-    }
 
-    const snapshot = await this.snapshot();
-    const previousDifficulty = this.ctx.storage.sql
-      .exec<{ score: number }>("SELECT score FROM difficulty_votes WHERE voter_id = ?", voterId)
-      .toArray()[0];
-    this.ctx.storage.sql.exec(
-      `INSERT INTO difficulty_votes (voter_id, score, updated_at)
-       VALUES (?, ?, ?)
-       ON CONFLICT (voter_id)
-       DO UPDATE SET score = excluded.score, updated_at = excluded.updated_at`,
-      voterId,
-      difficulty,
-      now,
-    );
-
-    const requiresApproval = sessionMode === "approval" || participant?.question_state === "review";
-    const delay = moderation?.enabled ? moderation.presentationDelaySeconds * 1000 : 0;
-    const visibility: QuestionVisibility = requiresApproval || delay > 0 ? "pending" : "public";
-    const publishAt = visibility === "pending" && !requiresApproval ? now + delay : null;
-    const publicLabel = participant?.public_label ?? (cleanText(nickname, 24) || this.anonymousLabel(voterId));
-    const id = crypto.randomUUID();
-    this.ctx.storage.sql.exec(
-      `INSERT INTO questions
-        (id, voter_id, text, nickname, lens, difficulty, created_at, visibility, publish_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      id,
-      voterId,
-      cleanedText,
-      publicLabel,
-      lens,
-      difficulty,
-      now,
-      visibility,
-      publishAt,
-    );
-    if (participant) {
+      const publicLabel = participant?.public_label ?? (cleanedNickname || this.anonymousLabel(voterId));
+      if (participant) {
+        this.ctx.storage.sql.exec("UPDATE participants SET last_seen_at = ? WHERE voter_id = ?", now, voterId);
+      } else {
+        this.ctx.storage.sql.exec(
+          `INSERT INTO participants
+            (voter_id, alias, public_label, coc_version, coc_accepted_at, question_state, slow_until, created_at, last_seen_at)
+           VALUES (?, ?, ?, NULL, NULL, 'normal', NULL, ?, ?)`,
+          voterId,
+          publicLabel,
+          publicLabel,
+          now,
+          now,
+        );
+      }
+      const requiresApproval = sessionMode === "approval" || participant?.question_state === "review";
+      const delay = moderation?.enabled ? moderation.presentationDelaySeconds * 1000 : 0;
+      const visibility: QuestionVisibility = requiresApproval || delay > 0 ? "pending" : "public";
+      const publishAt = visibility === "pending" && !requiresApproval ? now + delay : null;
+      const id = crypto.randomUUID();
       this.ctx.storage.sql.exec(
-        "UPDATE participants SET last_seen_at = ? WHERE voter_id = ?",
-        now,
-        voterId,
-      );
-    }
-    this.updateDifficultySnapshot(snapshot.difficulty, previousDifficulty?.score, difficulty);
-    if (visibility === "public") {
-      snapshot.questions.unshift({
+        `INSERT INTO questions
+          (id, voter_id, text, nickname, lens, difficulty, created_at, visibility, publish_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         id,
-        text: cleanedText,
-        nickname: publicLabel,
+        voterId,
+        cleanedText,
+        publicLabel,
         lens,
         difficulty,
-        createdAt: now,
-        upvotes: 0,
-      });
-      snapshot.questions = snapshot.questions.slice(0, 100);
-    }
-    if (publishAt) await this.scheduleNextAlarm();
-    const nextSnapshot = await this.broadcastSnapshot(this.touch(snapshot));
-    const result = {
-      snapshot: nextSnapshot,
-      submission: {
+        now,
+        visibility,
+        publishAt,
+      );
+      return {
         id,
         text: cleanedText,
         nickname: publicLabel,
@@ -868,10 +866,14 @@ export class LiveSession extends DurableObject<Env> {
         upvotes: 0,
         visibility,
         statusLabel: statusLabel(visibility),
-      },
-    };
-    await this.broadcastParticipantState(voterId);
-    return result;
+        publishAt,
+      };
+    });
+    this.snapshotCache = null;
+    if (submission.publishAt) await this.scheduleNextAlarm();
+    const snapshot = await this.broadcastSnapshot();
+    const { publishAt: _publishAt, ...ownQuestion } = submission;
+    return { snapshot, submission: ownQuestion };
   }
 
   async setDifficulty(score: number, voterId: string): Promise<SessionSnapshot> {
@@ -1008,7 +1010,6 @@ export class LiveSession extends DurableObject<Env> {
       );
       this.snapshotCache = null;
       await this.broadcastSnapshot();
-      await this.broadcastParticipantState(question.voter_id);
     } else {
       this.broadcastModerationActivity();
     }
@@ -1107,7 +1108,6 @@ export class LiveSession extends DurableObject<Env> {
     this.recordModerationAction(questionId, row.voter_id, action, reason, now);
     this.snapshotCache = null;
     await this.broadcastSnapshot();
-    await this.broadcastParticipantState(row.voter_id);
     return this.moderatorSnapshot();
   }
 
@@ -1131,7 +1131,6 @@ export class LiveSession extends DurableObject<Env> {
       voterId,
     );
     this.recordModerationAction(null, voterId, action, reason, now);
-    await this.broadcastParticipantState(voterId);
     return this.moderatorSnapshot();
   }
 
@@ -1169,18 +1168,6 @@ export class LiveSession extends DurableObject<Env> {
     this.reactionWindows.clear();
     this.snapshotCache = null;
     const snapshot = await this.broadcastSnapshot(await this.snapshot());
-    const participantReset = JSON.stringify({
-      type: "participant",
-      data: { participant: null, questions: [] },
-    });
-    for (const socket of this.ctx.getWebSockets()) {
-      try {
-        const attachment = socket.deserializeAttachment() as { voterId?: unknown } | null;
-        if (typeof attachment?.voterId === "string") socket.send(participantReset);
-      } catch (error) {
-        console.error(JSON.stringify({ message: "participant reset broadcast failed", error: String(error) }));
-      }
-    }
     await this.scheduleNextAlarm();
     return snapshot;
   }
@@ -1246,13 +1233,6 @@ export class LiveSession extends DurableObject<Env> {
       await this.ctx.storage.deleteAlarm();
       return;
     }
-    const affectedVoters = this.ctx.storage.sql
-      .exec<{ voter_id: string }>(
-        `SELECT DISTINCT voter_id FROM questions
-         WHERE visibility = 'pending' AND publish_at IS NOT NULL AND publish_at <= ?`,
-        now,
-      )
-      .toArray();
     this.ctx.storage.sql.exec(
       `UPDATE questions
        SET visibility = 'public', publish_at = NULL
@@ -1261,7 +1241,6 @@ export class LiveSession extends DurableObject<Env> {
     );
     this.snapshotCache = null;
     await this.broadcastSnapshot();
-    for (const row of affectedVoters) await this.broadcastParticipantState(row.voter_id);
     await this.scheduleNextAlarm();
   }
 
@@ -1282,31 +1261,8 @@ export class LiveSession extends DurableObject<Env> {
     return new Response(null, { status: 101, webSocket: pair[0] });
   }
 
-  async webSocketMessage(socket: WebSocket, message: string | ArrayBuffer): Promise<void> {
-    if (typeof message !== "string") return;
-    if (message === "ping") {
-      socket.send("pong");
-      return;
-    }
-    try {
-      const parsed: unknown = JSON.parse(message);
-      if (
-        typeof parsed === "object" &&
-        parsed !== null &&
-        "type" in parsed &&
-        parsed.type === "identify" &&
-        "voterId" in parsed &&
-        typeof parsed.voterId === "string" &&
-        isUuid(parsed.voterId)
-      ) {
-        socket.serializeAttachment({ voterId: parsed.voterId });
-        socket.send(
-          JSON.stringify({ type: "participant", data: await this.participantState(parsed.voterId) }),
-        );
-      }
-    } catch {
-      socket.send(JSON.stringify({ type: "error", error: "invalid websocket message" }));
-    }
+  webSocketMessage(socket: WebSocket, message: string | ArrayBuffer): void {
+    if (message === "ping") socket.send("pong");
   }
 
   webSocketError(socket: WebSocket, error: unknown): void {
@@ -1537,25 +1493,6 @@ export class LiveSession extends DurableObject<Env> {
     );
     if (timestamps.length) await this.ctx.storage.setAlarm(Math.min(...timestamps));
     else await this.ctx.storage.deleteAlarm();
-  }
-
-  private async broadcastParticipantState(
-    voterId: string,
-    state?: ParticipantState,
-  ): Promise<void> {
-    const payload = JSON.stringify({
-      type: "participant",
-      data: state ?? (await this.participantState(voterId)),
-    });
-    for (const socket of this.ctx.getWebSockets()) {
-      try {
-        const attachment = socket.deserializeAttachment() as { voterId?: unknown } | null;
-        if (attachment?.voterId !== voterId) continue;
-        socket.send(payload);
-      } catch (error) {
-        console.error(JSON.stringify({ message: "participant broadcast failed", error: String(error) }));
-      }
-    }
   }
 
   private broadcastModerationActivity(): void {

@@ -140,7 +140,7 @@ function questionCard(question) {
     <div class="moderator-card-head"><b>${status}</b><time>${formatTime(question.createdAt)}</time></div>
     ${question.flagCount ? `<div class="flag-summary"><b>${question.flagCount} ${t("reports", "次檢舉")}</b><span>${question.flagWeight} / ${question.flagThreshold} ${t("weighted threshold", "加權門檻")}</span><small>${escapeHtml(flagReasons)}</small></div>` : ""}
     <p>${escapeHtml(question.text)}</p>
-    <div class="moderator-meta"><span>${escapeHtml(question.nickname)}</span><span>${question.difficulty} · ${escapeHtml(lensLabels[question.lens] || question.lens)}</span></div>
+    <div class="moderator-meta"><span>${escapeHtml(question.nickname)}</span>${question.lens !== null && question.difficulty !== null ? `<span>${question.difficulty} · ${escapeHtml(lensLabels[question.lens] || question.lens)}</span>` : ""}</div>
     <label>${t("Reason", "理由")}
       <select>
         <option value="disruption" ${selectedReason === "disruption" ? "selected" : ""}>${t("Flooding or deliberate disruption", "洗版或蓄意干擾")}</option>
@@ -151,7 +151,7 @@ function questionCard(question) {
       </select>
     </label>
     <div class="moderator-actions">
-      ${isPublic || question.visibility === "pending" ? `<button class="danger" data-action="hide">${t("Hide", "隱藏")}</button>` : isCommunityHold ? `<button class="danger" data-action="hide">${t("Confirm hidden", "確認隱藏")}</button><button data-action="restore-question">${t("Restore question", "恢復問題")}</button>` : `<button data-action="restore-question">${t("Restore question", "恢復問題")}</button>`}
+      ${question.visibility === "pending" ? `<button data-action="restore-question">${t("Publish question", "發布問題", "Publier la question")}</button><button class="danger" data-action="hide">${t("Hide", "隱藏")}</button>` : isPublic ? `<button class="danger" data-action="hide">${t("Hide", "隱藏")}</button>` : isCommunityHold ? `<button class="danger" data-action="hide">${t("Confirm hidden", "確認隱藏")}</button><button data-action="restore-question">${t("Restore question", "恢復問題")}</button>` : `<button data-action="restore-question">${t("Restore question", "恢復問題")}</button>`}
       <button data-action="slow">${t("Slow 10 min", "慢速 10 分鐘")}</button>
       <button data-action="review">${t("Review future", "後續提問需審核")}</button>
       <button data-action="mute">${t("Mute questions", "暫停此人的提問")}</button>
@@ -189,6 +189,7 @@ function connect() {
   socket = new WebSocket(`${protocol}//${location.host}${apiBase}/live`);
   socket.addEventListener("open", () => {
     statusEl.textContent = t("Moderator connected", "主持控制台已連線");
+    scheduleRefresh();
   });
   socket.addEventListener("message", (event) => {
     if (!state || document.visibilityState !== "visible") return;
@@ -204,6 +205,10 @@ function connect() {
     setTimeout(connect, 1500);
   });
 }
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && state) scheduleRefresh();
+});
 
 function formatTime(value) {
   return new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(new Date(value));

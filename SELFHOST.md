@@ -4,6 +4,8 @@ L’instance [call-in.bordeauxjs.com](https://call-in.bordeauxjs.com/) est dépl
 
 L’interface de cette installation est en français. Les nouveaux événements reçoivent des libellés français. Pour les anciens événements, les libellés par défaut sont traduits à l’affichage, sans modifier les données enregistrées ni les textes personnalisés.
 
+Un titre suffit pour créer un événement ; une présentation reste facultative. Les participants saisissent un pseudo et une question, sans compte. Les organisateurs consultent les questions en direct et les gèrent depuis leur lien de modération privé. Une question envoyée par ce parcours ne crée ni note de difficulté ni catégorie. Les informations des événements existants sont conservées.
+
 ## Configuration
 
 Les événements créés sur le site disposent chacun de leurs liens privés de configuration et de modération. Aucun secret global n’est nécessaire pour ce parcours. Les données, réponses et PDF expirent après sept jours ; la taille maximale d’un PDF est de 20 Mo. La démo est publique et se réinitialise chaque jour.
