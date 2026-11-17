@@ -17,10 +17,10 @@ const next = document.querySelector("[data-pdf-next]");
 const currentLabel = document.querySelector("[data-pdf-current]");
 const totalLabel = document.querySelector("[data-pdf-total]");
 const labels = french
-  ? { title: "Présentation PDF Call-in", stage: "Diapositives PDF", loading: "Préparation des diapositives…", error: "Impossible d’afficher ce PDF. Utilisez « Ouvrir la présentation » dans la barre d’outils.", previous: "Diapositive précédente", next: "Diapositive suivante", page: (page, total) => `Diapositive ${page} sur ${total}`, internalLink: (page) => `Aller à la diapositive ${page}` }
+  ? { title: "Présentation PDF Call-in", stage: "Diapositives PDF", controls: "Navigation dans le PDF", loading: "Préparation des diapositives…", error: "Impossible d’afficher ce PDF. Utilisez « Ouvrir la présentation » dans la barre d’outils.", previous: "Diapositive précédente", next: "Diapositive suivante", page: (page, total) => `Diapositive ${page} sur ${total}`, internalLink: (page) => `Aller à la diapositive ${page}` }
   : english
-  ? { title: "Call-in PDF deck", stage: "PDF slides", loading: "Preparing slides…", error: "This PDF could not be displayed. Use “Open deck” in the presenter toolbar.", previous: "Previous page", next: "Next page", page: (page, total) => `Slide ${page} of ${total}`, internalLink: (page) => `Go to slide ${page}` }
-  : { title: "Call-in PDF 簡報", stage: "PDF 簡報", loading: "正在準備簡報…", error: "這份 PDF 無法顯示，請使用講者工具列的「另開簡報」。", previous: "上一頁", next: "下一頁", page: (page, total) => `簡報第 ${page} 頁，共 ${total} 頁`, internalLink: (page) => `跳至第 ${page} 頁` };
+  ? { title: "Call-in PDF deck", stage: "PDF slides", controls: "PDF navigation", loading: "Preparing slides…", error: "This PDF could not be displayed. Use “Open deck” in the presenter toolbar.", previous: "Previous page", next: "Next page", page: (page, total) => `Slide ${page} of ${total}`, internalLink: (page) => `Go to slide ${page}` }
+  : { title: "Call-in PDF 簡報", stage: "PDF 簡報", controls: "PDF 翻頁工具", loading: "正在準備簡報…", error: "這份 PDF 無法顯示，請使用講者工具列的「另開簡報」。", previous: "上一頁", next: "下一頁", page: (page, total) => `簡報第 ${page} 頁，共 ${total} 頁`, internalLink: (page) => `跳至第 ${page} 頁` };
 
 let pdf;
 let pageNumber = 1;
@@ -33,11 +33,12 @@ let suppressLinkClick = false;
 document.documentElement.lang = french ? "fr" : english ? "en" : "zh-Hant-TW";
 document.title = labels.title;
 stage.setAttribute("aria-label", labels.stage);
+controls.setAttribute("aria-label", labels.controls);
 status.textContent = labels.loading;
 previous.setAttribute("aria-label", labels.previous);
 previous.title = `${labels.previous} (←)`;
 next.setAttribute("aria-label", labels.next);
-next.title = `${labels.next} (→ / Space)`;
+next.title = `${labels.next} (→ / ${french ? "Espace" : "Space"})`;
 
 previous.addEventListener("click", () => void goToPage(pageNumber - 1));
 next.addEventListener("click", () => void goToPage(pageNumber + 1));
