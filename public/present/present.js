@@ -48,6 +48,7 @@ document.title = `${config.title} · ${labels.presenter}`;
 productHome.href = french ? "/fr/" : english ? "/en/" : "/";
 productHome.setAttribute("aria-label", labels.home);
 document.querySelector("[data-event-title]").textContent = config.title;
+document.querySelector("[data-event-title]").title = config.title;
 status.textContent = noDeck ? (french ? "Questions en direct" : english ? "Live questions" : "即時問題") : labels.loading;
 openDeck.textContent = labels.open;
 document.querySelector("[data-audience-link]").textContent = labels.audience;
@@ -102,6 +103,7 @@ toolbarPeek.addEventListener("click", () => setToolbarCollapsed(false, true));
 
 function setToolbarCollapsed(collapsed, moveFocus = false) {
   document.body.classList.toggle("toolbar-collapsed", collapsed);
+  document.querySelector(".present-toolbar").inert = collapsed;
   toolbarToggle.setAttribute("aria-expanded", String(!collapsed));
   sessionStorage.setItem("call-in-toolbar-collapsed", String(collapsed));
   if (moveFocus) (collapsed ? toolbarPeek : toolbarToggle).focus();

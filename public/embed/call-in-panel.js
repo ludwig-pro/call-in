@@ -8,20 +8,19 @@ template.innerHTML = `
       z-index: 2147483000;
       width: var(--panel-width);
       pointer-events: none;
-      font-family: Inter, "Noto Sans TC", system-ui, sans-serif;
+      font-family: var(--font, system-ui, sans-serif);
     }
     aside {
       position: absolute;
       inset: 0;
       overflow: hidden;
-      border-left: 1px solid #35dcff55;
-      background: #081225;
-      box-shadow: -18px 0 60px #02061188;
+      border-left: 3px solid #111;
+      background: #f6f5f0;
       transform: translateX(0);
       transition: transform .26s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
       pointer-events: auto;
     }
-    iframe { display: block; width: 100%; height: 100%; border: 0; background: #081225; }
+    iframe { display: block; width: 100%; height: 100%; border: 0; background: #f6f5f0; }
     button {
       position: fixed;
       right: 12px;
@@ -31,19 +30,19 @@ template.innerHTML = `
       align-items: center;
       gap: 8px;
       min-height: 40px;
-      border: 1px solid #35dcff88;
-      border-radius: 999px;
+      border: 2px solid #111;
+      border-radius: 0;
       padding: 9px 13px;
-      background: #081225ee;
-      color: #f6f8ff;
-      box-shadow: 0 12px 34px #020612b8;
-      font: 800 13px/1 inherit;
+      background: #f7df1e;
+      color: #111;
+      font-family: inherit;
+      font-size: .85rem;
+      font-weight: 800;
       cursor: pointer;
       pointer-events: auto;
       touch-action: manipulation;
-      backdrop-filter: blur(14px);
     }
-    button::before { content: "●"; color: #b9f24a; font-size: 9px; }
+    button:focus-visible { outline: 3px solid #111; outline-offset: 2px; }
     :host([collapsed]) aside { transform: translateX(102%); opacity: 0; pointer-events: none; }
     .scrim { display: none; }
     @media (max-width: 900px) {
@@ -53,10 +52,9 @@ template.innerHTML = `
         inset: 0;
         display: block;
         z-index: -1;
-        background: #020611aa;
+        background: #1119;
         pointer-events: auto;
       }
-      aside { box-shadow: -24px 0 70px #020611cc; }
     }
     @media (prefers-reduced-motion: reduce) { aside { transition: none; } }
   </style>
@@ -67,6 +65,12 @@ template.innerHTML = `
   </aside>
 `;
 
+const labels = {
+  en: { panel: "Live audience dashboard", show: "Live audience", hide: "Hide dashboard" },
+  fr: { panel: "Questions du public", show: "Afficher les questions", hide: "Masquer les questions" },
+  zh: { panel: "現場互動儀表板", show: "現場互動", hide: "收起互動" },
+};
+
 class CallInPanel extends HTMLElement {
   #button;
   #frame;
@@ -74,7 +78,7 @@ class CallInPanel extends HTMLElement {
   #target;
   #savedTargetRight;
   #savedBodyPadding;
-  #zhHant = false;
+  #labels = labels.en;
 
   constructor() {
     super();
@@ -87,13 +91,10 @@ class CallInPanel extends HTMLElement {
   connectedCallback() {
     const serviceUrl = normalizeUrl(this.getAttribute("service-url") || location.origin);
     const dashboardUrl = this.getAttribute("dashboard-url") || `${serviceUrl}/dashboard/`;
-    this.#zhHant = (this.getAttribute("locale") || document.documentElement.lang)
-      .toLowerCase()
-      .startsWith("zh");
-    if (this.#zhHant) {
-      this.shadowRoot.querySelector("aside").setAttribute("aria-label", "現場互動儀表板");
-      this.#frame.title = "現場互動儀表板";
-    }
+    const locale = (this.getAttribute("locale") || document.documentElement.lang).toLowerCase().split("-")[0];
+    this.#labels = labels[locale] || labels.en;
+    this.shadowRoot.querySelector("aside").setAttribute("aria-label", this.#labels.panel);
+    this.#frame.title = this.#labels.panel;
     this.style.setProperty("--panel-width", this.getAttribute("desktop-width") || "min(25vw, 520px)");
     this.#frame.src = dashboardUrl;
     this.#button.addEventListener("click", this.#toggle);
@@ -127,23 +128,9 @@ class CallInPanel extends HTMLElement {
     const compact = matchMedia("(max-width: 900px)").matches;
     const collapsed = this.hasAttribute("collapsed");
     this.#button.setAttribute("aria-expanded", String(!collapsed));
-    this.#button.setAttribute(
-      "aria-label",
-      collapsed
-        ? this.#zhHant
-          ? "開啟現場互動儀表板"
-          : "Open live audience dashboard"
-        : this.#zhHant
-          ? "隱藏現場互動儀表板"
-          : "Hide live audience dashboard",
-    );
-    this.#button.querySelector("span").textContent = collapsed
-      ? this.#zhHant
-        ? "現場互動"
-        : "Live audience"
-      : this.#zhHant
-        ? "收起互動"
-        : "Hide dashboard";
+    const label = collapsed ? this.#labels.show : this.#labels.hide;
+    this.#button.setAttribute("aria-label", label);
+    this.#button.querySelector("span").textContent = label;
     if (this.getAttribute("mode") !== "split" || compact || collapsed) {
       this.#restoreLayout();
       return;

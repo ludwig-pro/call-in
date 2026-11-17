@@ -3,18 +3,31 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#081225" />
+    <meta name="theme-color" content="#f6f5f0" />
     <link rel="icon" type="image/svg+xml" href="/brand/call-in-mark.svg" />
     <title>Call-in moderation</title>
     <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/brand/affiche.css" />
     <link rel="stylesheet" href="/moderate/moderate.css" />
+    <script src="/brand/theme.js"></script>
   </head>
   <body class="moderator-page">
     <header class="moderator-header">
-      <div><div class="eyebrow" data-zh="主持工具">MODERATOR</div><h1 data-zh="維持有用的現場討論">Keep the room useful</h1></div>
-      <div class="moderator-status" data-moderator-status data-zh="尚未連線">Signed out</div>
+      <div class="moderator-header-inner">
+        <a class="moderator-brand" href="/" aria-label="BordeauxJS">
+          <span class="bjs-wordmark">Bordeaux<span class="bjs-tile">JS</span></span>
+        </a>
+        <div class="moderator-header-actions">
+          <div class="moderator-status" data-moderator-status data-zh="尚未連線">Signed out</div>
+          <button class="theme-toggle" type="button" data-theme-toggle data-light-label="Switch to light theme" data-dark-label="Switch to dark theme" aria-label="Switch to dark theme">☾</button>
+        </div>
+      </div>
     </header>
     <main class="moderator-main">
+      <div class="moderator-intro">
+        <div class="eyebrow" data-zh="主持工具">MODERATOR</div>
+        <h1 data-zh="維持有用的現場討論">Keep the room useful</h1>
+      </div>
       <section class="moderator-login" data-login-panel>
         <h2 data-zh="開啟主持控制台">Open the moderation controls</h2>
         <p data-zh="如果你剛建立這場活動，請從建立完成頁按「開啟主持控制台」，系統會直接登入。協作者可以貼上收到的整條主持私密連結，不需要自己尋找存取碼。">If you just created this event, use “Open moderation” on the completion page and you will be signed in automatically. Collaborators can paste the full private moderation link instead of finding a token inside it.</p>

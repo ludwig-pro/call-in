@@ -8,6 +8,12 @@ const locale = createLocale(config);
 const t = locale.text;
 locale.apply();
 document.title = t("Call-in moderation", "Call-in 主持工具");
+const themeToggle = document.querySelector("[data-theme-toggle]");
+if (themeToggle) {
+  themeToggle.dataset.lightLabel = t("Switch to light theme", "切換為亮色模式", "Activer le thème clair");
+  themeToggle.dataset.darkLabel = t("Switch to dark theme", "切換為暗色模式", "Activer le thème sombre");
+  themeToggle.setAttribute("aria-label", document.documentElement.dataset.theme === "dark" ? themeToggle.dataset.lightLabel : themeToggle.dataset.darkLabel);
+}
 const lensLabels = Object.fromEntries(config.question.lenses.map((lens) => [lens.id, lens.label]));
 const loginPanel = document.querySelector("[data-login-panel]");
 const loginForm = document.querySelector("[data-login-form]");

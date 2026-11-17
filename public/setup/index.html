@@ -3,23 +3,36 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#081225" />
+    <meta name="theme-color" content="#f6f5f0" />
     <link rel="icon" type="image/svg+xml" href="/brand/call-in-mark.svg" />
     <title>Configuration Call-in</title>
     <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/brand/affiche.css" />
     <link rel="stylesheet" href="/setup/setup.css" />
+    <script src="/brand/theme.js"></script>
   </head>
   <body class="setup-page">
     <header class="setup-header">
-      <div>
-        <div class="eyebrow">Configuration Call-in</div>
-        <h1>Configurez votre événement</h1>
-        <p>Modifiez la présentation et les paramètres de votre événement.</p>
+      <div class="setup-header-inner">
+        <a class="setup-brand" href="/" aria-label="BordeauxJS">
+          <span class="bjs-wordmark">Bordeaux<span class="bjs-tile">JS</span></span>
+        </a>
+        <div class="setup-header-actions">
+          <span class="setup-header-label">Configuration</span>
+          <button class="theme-toggle" type="button" data-theme-toggle data-light-label="Activer le thème clair" data-dark-label="Activer le thème sombre" aria-label="Activer le thème sombre">☾</button>
+        </div>
       </div>
-      <a class="setup-quiet-link" data-audience-link href="/">Ouvrir la page du public ↗</a>
     </header>
 
     <main class="setup-main">
+      <div class="setup-intro">
+        <div>
+          <div class="eyebrow">Configuration Call-in</div>
+          <h1>Configurez votre événement</h1>
+          <p>Modifiez la présentation et les paramètres de votre événement.</p>
+        </div>
+        <a class="setup-quiet-link" data-audience-link href="/">Ouvrir la page du public ↗</a>
+      </div>
       <section class="setup-card setup-login" data-login-panel>
         <div class="setup-step">01</div>
         <div>

@@ -1,0 +1,36 @@
+html { color-scheme: light; }
+body { min-height: 100dvh; }
+.example-slide {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(.8rem, 3vmin, 2.5rem);
+  padding: clamp(1rem, 5vmin, 5rem);
+  background: #f6f5f0;
+  color: #111;
+}
+.slide-imprint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: .7rem;
+  border-bottom: 3px solid;
+  font-size: clamp(.7rem, 1.5vmin, 1rem);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.slide-imprint .bjs-wordmark { font-size: clamp(.85rem, 3vmin, 1.5rem); }
+.example-slide h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, min(10vw, 16vmin), 9rem);
+  font-weight: 900;
+  font-stretch: 125%;
+  letter-spacing: -.055em;
+  line-height: .9;
+  text-transform: uppercase;
+}
+.example-slide h1 span { background: #f7df1e; padding-right: .06em; }
+.example-slide p { max-width: 36ch; margin: 0; font-size: clamp(1rem, 3vmin, 2rem); font-weight: 600; }
+.stage { position: fixed; inset: 0; overflow: auto; }

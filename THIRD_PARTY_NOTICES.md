@@ -48,3 +48,9 @@ The documentation device mockup uses [`picturepan2/devices.css`](https://github.
 available under the MIT License.
 
 Copyright (c) 2017 Yan Zhu
+
+## Archivo
+
+The BordeauxJS interface uses the Archivo variable font, copyright 2020 The Archivo
+Project Authors. The bundled Latin subset is distributed under the
+[SIL Open Font License 1.1](public/brand/Archivo-OFL.txt).

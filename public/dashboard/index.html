@@ -3,19 +3,21 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#081225" />
+    <meta name="theme-color" content="#f6f5f0" />
+    <script src="/brand/theme.js"></script>
     <link rel="icon" type="image/svg+xml" href="/brand/call-in-mark.svg" />
     <title>Call-in Dashboard</title>
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/brand/affiche.css" />
     <link rel="stylesheet" href="/dashboard/dashboard.css" />
   </head>
   <body class="dashboard-page">
     <header class="dashboard-header">
       <div class="dashboard-brand">
-        <div class="eyebrow" data-config="eyebrow">Call-in</div>
+        <a class="dashboard-home" href="/fr/" aria-label="BordeauxJS"><span class="bjs-wordmark">Bordeaux<span class="bjs-tile">JS</span></span></a>
+        <div class="dashboard-eyebrow" data-config="eyebrow" hidden>Call-in</div>
         <h1 data-config="dashboardTitle">Live audience</h1>
       </div>
-      <button class="dashboard-join" type="button" data-qr-open aria-haspopup="dialog" aria-controls="qr-modal" aria-expanded="false" title="Click to enlarge the QR code" data-zh-title="點擊放大 QR Code">
+      <button class="dashboard-join" type="button" data-qr-open aria-haspopup="dialog" aria-controls="qr-modal" aria-expanded="false" aria-label="Click to enlarge the QR code" data-zh-aria="點擊放大 QR Code" title="Click to enlarge the QR code" data-zh-title="點擊放大 QR Code">
         <img data-qr-image src="/api/qr.svg" alt="Scan to join the live audience page" data-zh-aria="掃描 QR Code 加入現場互動" />
         <span><b data-zh="掃描加入">Scan to join</b><small data-zh="提問">Questions</small></span>
       </button>
@@ -23,7 +25,7 @@
     </header>
     <main class="dashboard-main">
       <section class="dashboard-section">
-        <div class="dashboard-section-head"><div><div class="eyebrow" data-zh="問題池">Q&amp;A POOL</div><h2 data-config="question.title">Ask anytime</h2></div><div class="question-session-meta"><b data-session-mode>OPEN</b><span data-question-count data-zh="0 個問題">0 questions</span></div></div>
+        <div class="dashboard-section-head"><div><h2 data-config="question.title">Ask anytime</h2></div><div class="question-session-meta"><b data-session-mode>OPEN</b><span data-question-count data-zh="0 個問題">0 questions</span></div></div>
         <a class="dashboard-expand" data-dashboard-expand target="_blank" rel="noreferrer" data-zh="在新分頁放大問題 ↗">Open questions in a new tab ↗</a>
         <div id="dashboard-questions" class="dashboard-questions"></div>
       </section>
