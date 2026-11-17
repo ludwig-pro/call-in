@@ -45,6 +45,7 @@ export const french = {
   "Q&A POOL": "QUESTIONS DU PUBLIC",
   "POLL": "SONDAGE",
   "Open audience page ↗": "Ouvrir la page du public ↗",
+  "Open questions in a new tab ↗": "Ouvrir les questions en grand ↗",
   "Close QR code dialog": "Fermer le QR code",
   "Press Escape or use the close button": "Appuyez sur Échap ou sur le bouton de fermeture",
   "MODERATOR": "MODÉRATION",

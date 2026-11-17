@@ -176,6 +176,40 @@ body.dashboard-page {
   color: var(--muted);
   font-size: 10px;
 }
+.dashboard-expand {
+  display: none;
+}
+html.embedded-dashboard .dashboard-expand[href] {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: var(--sage);
+  font-size: 13px;
+  font-weight: 750;
+  text-underline-offset: 3px;
+}
+.dashboard-expand:focus-visible {
+  outline: 2px solid var(--sage);
+  outline-offset: 3px;
+}
+html:not(.embedded-dashboard) .dashboard-main {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: clamp(18px, 4vw, 48px);
+}
+html:not(.embedded-dashboard) .dashboard-questions {
+  gap: 16px;
+}
+html:not(.embedded-dashboard) .dashboard-questions article {
+  padding: clamp(18px, 2.5vw, 32px);
+}
+html:not(.embedded-dashboard) .dashboard-questions article p {
+  font-size: clamp(22px, 2.8vw, 36px);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+html:not(.embedded-dashboard) .dashboard-questions article small {
+  font-size: clamp(15px, 1.5vw, 20px);
+}
 .dashboard-questions .question-tags {
   margin-top: 10px;
 }

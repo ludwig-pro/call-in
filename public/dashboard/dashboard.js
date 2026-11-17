@@ -19,6 +19,7 @@ document.querySelectorAll("[data-qr-image]").forEach((image) => {
 document.querySelectorAll("[data-audience-url]").forEach((link) => {
   link.href = eventPage("/");
 });
+document.querySelector("[data-dashboard-expand]").href = eventPage("/dashboard/");
 const questionsRoot = document.querySelector("#dashboard-questions");
 const statusEl = document.querySelector("[data-status]");
 const reactionStage = document.querySelector("[data-reaction-stage]");
