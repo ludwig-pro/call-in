@@ -62,7 +62,7 @@ form.addEventListener("submit", async (event) => {
     const personalRefresh = refreshPersonal();
     setNotice(result.submission.visibility === "public"
       ? "Votre question a bien été envoyée."
-      : "Votre question a bien été envoyée. Elle apparaîtra dans la liste une fois publiée par les organisateurs.");
+      : "Votre question a bien été envoyée. Elle apparaîtra dans la liste une fois publiée.");
     navigate("list", { clearNotice: false });
     await Promise.allSettled([personalRefresh, refreshSnapshot()]);
     notifyOtherTabs();
