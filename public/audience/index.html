@@ -3,42 +3,55 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#081225" />
+    <meta name="theme-color" content="#f6f5f0" />
+    <script src="/brand/theme.js"></script>
     <link rel="icon" type="image/svg+xml" href="/brand/call-in-mark.svg" />
+    <link rel="stylesheet" href="/brand/affiche.css" />
     <link rel="stylesheet" href="/audience/audience.css" />
     <title>Poser une question</title>
   </head>
   <body>
+    <div class="audience-masthead">
+      <a href="/fr/" class="audience-home" aria-label="Accueil BordeauxJS">
+        <span class="bjs-wordmark">Bordeaux<span class="bjs-tile">JS</span></span>
+      </a>
+      <div class="masthead-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle data-light-label="Activer le thème clair" data-dark-label="Activer le thème sombre" aria-label="Activer le thème sombre">☾</button>
+      </div>
+    </div>
     <main class="page">
-      <header>
-        <div class="eyebrow">Questions du public</div>
+      <header class="event-intro">
         <h1 data-event-title>Posez votre question</h1>
         <p>Posez une question ou soutenez celles des autres participants.</p>
       </header>
-      <p class="message" data-message role="status" aria-live="polite"></p>
-      <section data-form-view aria-labelledby="form-title">
-        <h2 id="form-title" tabindex="-1">Poser une question</h2>
-        <form id="question-form" method="post">
-          <label for="nickname">Votre pseudo</label>
-          <input id="nickname" name="nickname" autocomplete="nickname" minlength="1" maxlength="24" required placeholder="Comment vous appeler ?" />
-          <p class="hint">Votre pseudo reste le même pendant cet événement.</p>
-          <label for="question">Votre question</label>
-          <textarea id="question" name="question" minlength="4" maxlength="280" rows="5" required placeholder="Écrivez votre question…"></textarea>
-          <button type="submit" disabled>Envoyer</button>
-        </form>
-        <a class="secondary-link" href="#questions" data-show-list>Voir les questions du public →</a>
-      </section>
-      <section data-list-view aria-labelledby="list-title" hidden>
-        <div class="list-heading">
-          <h2 id="list-title" tabindex="-1">Questions du public</h2>
-          <a class="primary-link" href="#poser" data-show-form>Poser une question</a>
-        </div>
-        <p class="hint">Soutenez les questions que vous aimeriez voir abordées.</p>
-        <p class="connection" data-connection role="status"></p>
-        <p class="list-error" data-list-error role="status" hidden></p>
-        <button class="retry" type="button" data-retry hidden>Réessayer</button>
-        <div class="questions" data-questions></div>
-      </section>
+      <div class="participation">
+        <p class="message" data-message role="status" aria-live="polite"></p>
+        <section data-form-view aria-labelledby="form-title">
+          <div class="section-heading">
+            <h2 id="form-title" tabindex="-1">Poser une question</h2>
+          </div>
+          <form id="question-form" method="post">
+            <label for="nickname">Votre pseudo</label>
+            <input id="nickname" name="nickname" autocomplete="nickname" minlength="1" maxlength="24" required placeholder="Comment vous appeler ?" />
+            <p class="hint">Votre pseudo reste le même pendant cet événement.</p>
+            <label for="question">Votre question</label>
+            <textarea id="question" name="question" minlength="4" maxlength="280" rows="5" required placeholder="Écrivez votre question…"></textarea>
+            <button type="submit" disabled>Envoyer <span aria-hidden="true">↗</span></button>
+          </form>
+          <a class="secondary-link" href="#questions" data-show-list>Voir les questions du public <span aria-hidden="true">→</span></a>
+        </section>
+        <section data-list-view aria-labelledby="list-title" hidden>
+          <div class="section-heading list-heading">
+            <h2 id="list-title" tabindex="-1">Questions du public</h2>
+          </div>
+          <p class="list-intro">Soutenez les questions que vous aimeriez voir abordées.</p>
+          <a class="primary-link" href="#poser" data-show-form>Poser une question <span aria-hidden="true">↗</span></a>
+          <p class="connection" data-connection role="status"></p>
+          <p class="list-error" data-list-error role="status" hidden></p>
+          <button class="retry" type="button" data-retry hidden>Réessayer</button>
+          <div class="questions" data-questions></div>
+        </section>
+      </div>
     </main>
     <script type="module" src="/app.js"></script>
   </body>

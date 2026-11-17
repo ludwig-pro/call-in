@@ -147,13 +147,43 @@ function applyConfig(nextConfig) {
   };
   document.querySelectorAll("[data-config]").forEach((element) => {
     const value = values[element.dataset.config];
-    if (typeof value === "string") element.textContent = value;
+    if (typeof value === "string") {
+      element.textContent = value;
+      if (element.dataset.config === "eyebrow") {
+        element.hidden = ["call-in", nextConfig.dashboardTitle.toLowerCase()].includes(value.trim().toLowerCase());
+      }
+    }
   });
-  document.documentElement.style.setProperty("--forest", nextConfig.theme.background);
-  document.documentElement.style.setProperty("--clay", nextConfig.theme.highlight);
-  document.documentElement.style.setProperty("--sage", nextConfig.theme.accent);
-  document.documentElement.style.setProperty("--panel", nextConfig.theme.panel);
-  document.documentElement.style.setProperty("--positive", nextConfig.theme.positive);
+  // These are the historical defaults; the editable event config cannot identify them reliably.
+  const historicalTheme = {
+    background: "#081225",
+    panel: "#101d3d",
+    accent: "#35dcff",
+    highlight: "#ff4f9a",
+    positive: "#b9f24a",
+  };
+  const properties = {
+    background: ["--wall-background", "--wall-foreground"],
+    panel: ["--wall-panel", "--wall-panel-foreground"],
+    accent: ["--wall-accent", "--wall-accent-foreground"],
+    highlight: ["--wall-highlight", "--wall-highlight-foreground"],
+    positive: ["--wall-positive"],
+  };
+  for (const [key, [background, foreground]] of Object.entries(properties)) {
+    const color = nextConfig.theme[key];
+    if (color.toLowerCase() === historicalTheme[key]) continue;
+    document.documentElement.style.setProperty(background, color);
+    if (foreground) document.documentElement.style.setProperty(foreground, readableText(color));
+  }
+}
+
+function readableText(color) {
+  const channels = [1, 3, 5].map((offset) => {
+    const value = parseInt(color.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  return (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05) ? "#000000" : "#ffffff";
 }
 
 const qrModal = document.querySelector("[data-qr-modal]");

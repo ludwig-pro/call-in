@@ -1,27 +1,17 @@
 <!doctype html>
-<html lang="zh-Hant-TW">
+<html lang="fr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Call-in demo deck</title>
-    <style>
-      :root { font-family: Inter, "Noto Sans TC", system-ui, sans-serif; color: #f6f8ff; background: #07101f; }
-      * { box-sizing: border-box; }
-      body { margin: 0; overflow: hidden; }
-      .stage { position: fixed; inset: 0; display: grid; place-items: center; padding: clamp(32px, 8vw, 110px); background: radial-gradient(circle at 80% 20%, #ff4f9a44, transparent 35%), linear-gradient(#132249 1px, transparent 1px), linear-gradient(90deg, #132249 1px, transparent 1px), #07101f; background-size: auto, 48px 48px, 48px 48px, auto; transition: right .26s ease; }
-      .slide { max-width: 980px; }
-      .eyebrow { color: #ff4f9a; font: 800 16px/1 ui-monospace, monospace; letter-spacing: .16em; }
-      h1 { margin: 24px 0; font-size: clamp(58px, 9vw, 130px); line-height: .94; letter-spacing: -.055em; }
-      p { max-width: 760px; color: #b7c4df; font-size: clamp(20px, 2.4vw, 34px); line-height: 1.55; }
-    </style>
+    <link rel="stylesheet" href="/brand/affiche.css" />
+    <link rel="stylesheet" href="/demo/slide.css" />
+    <title>Intégrer les questions · Call-in BordeauxJS</title>
   </head>
   <body>
-    <main class="stage">
-      <section class="slide">
-        <div class="eyebrow">Call-in</div>
-        <h1>Your audience,<br />beside your slides.</h1>
-        <p>The dashboard shows live difficulty, questions, polls, and emoji reactions. On mobile, it becomes a touch-friendly drawer.</p>
-      </section>
+    <main class="example-slide stage">
+      <div class="slide-imprint"><span class="bjs-wordmark">Bordeaux<span class="bjs-tile">JS</span></span><span>Call-in</span></div>
+      <h1>Questions<br />en direct<span>.</span></h1>
+      <p>Les questions du public s’affichent à côté de la présentation.</p>
     </main>
     <script type="module" src="/embed/call-in-panel.js"></script>
     <call-in-panel service-url="/" mode="split" target-selector=".stage"></call-in-panel>

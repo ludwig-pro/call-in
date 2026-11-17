@@ -68,6 +68,7 @@ form.addEventListener("submit", async (event) => {
     showReceipt(result);
   } catch (error) {
     message.textContent = humanError(error);
+  } finally {
     button.disabled = false;
   }
 });
@@ -87,8 +88,9 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
   });
 });
 
-document.querySelectorAll("[data-create-another]").forEach((link) => {
+document.querySelectorAll('[data-create-another], [data-open-creator], a[href="#create"]').forEach((link) => {
   link.addEventListener("click", (event) => {
+    if (receipt.hidden) return;
     event.preventDefault();
     form.reset();
     fileLabel.textContent = fileLabelDefault;
@@ -96,7 +98,7 @@ document.querySelectorAll("[data-create-another]").forEach((link) => {
     setSourceMode(initialSourceMode);
     receipt.hidden = true;
     createPanel.hidden = false;
-    history.pushState(null, "", "#create");
+    if (location.hash !== "#create") history.pushState(null, "", "#create");
     createPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     form.querySelector('input[name="title"]')?.focus({ preventScroll: true });
   });

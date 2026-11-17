@@ -169,7 +169,7 @@ test("hosted creator replaces the landing-page demo and returns public and priva
   assert.match(eventContextJs, /`\/api\/demo\/\$\{demoLocale\}`/);
   assert.match(eventContextJs, /demoBase}\/audience\//);
   assert.match(demoCss, /\.demo-layout/);
-  assert.match(demoCss, /display:inline-flex; align-items:center; justify-content:center/);
+  assert.match(demoCss, /display:\s*inline-flex;\s*align-items:\s*center;\s*justify-content:\s*center/);
 });
 
 test("landing pages expose crawlable product answers and a shareable logo card", () => {

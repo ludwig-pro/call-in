@@ -14,7 +14,7 @@ Le fichier local `wrangler.selfhost.jsonc` contient la configuration de l’inst
 
 `ROOM_ID` reste à `default` et `ALLOWED_ORIGINS` est vide. Les condensats administrateur et modérateur vides concernent l’ancien mode à événement unique ; ils ne sont pas nécessaires aux événements créés sur le site.
 
-`prepare-selfhost.mjs` produit `.selfhost-assets` à partir de `public` : il active le français et adapte les liens au domaine de l’instance. Ce dossier est généré et ignoré par Git. Les polices de la page d’accueil sont chargées depuis Google Fonts.
+`prepare-selfhost.mjs` produit `.selfhost-assets` à partir de `public` : il active le français et adapte les liens au domaine de l’instance. Ce dossier est généré et ignoré par Git. La police Archivo est servie par le Worker depuis `public/brand/`, avec sa licence.
 
 ## Mettre à jour l’instance
 
