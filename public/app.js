@@ -8,6 +8,14 @@ const button = form.querySelector("button[type=submit]");
 let voterId;
 let submitted = false;
 
+for (const [field, error] of [
+  [nickname, "Indiquez votre pseudo."],
+  [question, "Votre question doit contenir au moins quatre caractères."],
+]) {
+  field.addEventListener("invalid", () => field.setCustomValidity(error));
+  field.addEventListener("input", () => field.setCustomValidity(""));
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!form.reportValidity() || !voterId) return;
