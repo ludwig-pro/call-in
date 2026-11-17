@@ -178,7 +178,8 @@ export function frenchDefaults(config) {
   const value = (text) => Object.hasOwn(defaults, text) ? defaults[text] : text;
   translated.locale = "fr";
   translated.description = value(translated.description);
-  translated.dashboardTitle = translated.dashboardTitle.replace(/ · Live call-in$/, " · Réactions en direct").replace(/・現場叩應$/, " · Réactions en direct");
+  const defaultTitles = [`${translated.title} · Live call-in`, `${translated.title}・現場叩應`, `${translated.title} · Réactions en direct`];
+  if (defaultTitles.includes(translated.dashboardTitle)) translated.dashboardTitle = `${translated.title} · Questions en direct`;
   translated.difficulty.title = value(translated.difficulty.title);
   translated.difficulty.labels = translated.difficulty.labels.map(value);
   translated.question.title = value(translated.question.title);

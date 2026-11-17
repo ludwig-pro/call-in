@@ -528,7 +528,7 @@ function hostedEventConfig(
     polls: [],
     ...(locale === "fr" ? {
       description: description || "Scannez le QR code pour partager vos questions, vos réactions et votre compréhension.",
-      dashboardTitle: `${title} · Réactions en direct`,
+      dashboardTitle: `${title} · Questions en direct`,
       difficulty: {
         title: "Comment trouvez-vous le rythme de la présentation ?",
         labels: ["Trop facile", "Facile", "Adapté", "Difficile", "Je décroche"],
