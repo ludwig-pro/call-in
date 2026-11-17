@@ -20,24 +20,12 @@
         <span><b data-zh="掃描加入">Scan to join</b><small data-zh="提問">Questions</small></span>
       </button>
       <div class="live-status dashboard-connection" data-status data-zh-tail="連線中"><span></span>Connecting</div>
-      <nav class="dashboard-tabs" role="tablist" aria-label="Dashboard views" data-zh-aria="儀表板畫面">
-        <button class="active" type="button" role="tab" aria-selected="true" data-dashboard-tab="live" data-zh="現場">Live</button>
-        <button type="button" role="tab" aria-selected="false" data-dashboard-tab="polls"><span data-zh="投票結果">Poll results</span> <span data-poll-total>0</span></button>
-      </nav>
     </header>
     <main class="dashboard-main">
-      <div class="dashboard-panel" role="tabpanel" data-dashboard-panel="live">
-        <section class="dashboard-section">
-          <div class="dashboard-section-head"><div><div class="eyebrow" data-zh="問題池">Q&amp;A POOL</div><h2 data-config="question.title">Ask anytime</h2></div><div class="question-session-meta"><b data-session-mode>OPEN</b><span data-question-count data-zh="0 個問題">0 questions</span></div></div>
-          <div id="dashboard-questions" class="dashboard-questions"></div>
-        </section>
-      </div>
-      <div class="dashboard-panel" role="tabpanel" data-dashboard-panel="polls" hidden>
-        <section class="dashboard-section">
-          <div class="dashboard-section-head"><div><div class="eyebrow" data-zh="投票">POLL</div><h2 data-zh="投票結果">Poll results</h2></div></div>
-          <div id="dashboard-polls" class="dashboard-polls"></div>
-        </section>
-      </div>
+      <section class="dashboard-section">
+        <div class="dashboard-section-head"><div><div class="eyebrow" data-zh="問題池">Q&amp;A POOL</div><h2 data-config="question.title">Ask anytime</h2></div><div class="question-session-meta"><b data-session-mode>OPEN</b><span data-question-count data-zh="0 個問題">0 questions</span></div></div>
+        <div id="dashboard-questions" class="dashboard-questions"></div>
+      </section>
     </main>
     <a class="dashboard-open" data-audience-url href="/" target="_blank" rel="noreferrer" data-zh="開啟觀眾頁 ↗">Open audience page ↗</a>
     <div class="reaction-stage" data-reaction-stage aria-live="polite"></div>

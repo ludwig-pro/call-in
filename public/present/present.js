@@ -22,7 +22,7 @@ const dashboardPane = document.querySelector(".dashboard-pane");
 const french = config.locale?.toLowerCase().startsWith("fr");
 const english = config.locale?.toLowerCase().startsWith("en");
 const labels = french
-  ? { presenter: "Présentation", home: "Accueil Call-in", loading: "Chargement de la présentation…", loaded: "Chargement de la présentation demandé", pdfPage: (page, pages) => `PDF ${page} / ${pages}`, open: "Ouvrir la présentation", audience: "Public", moderate: "Modération", hideDashboard: "Masquer les réactions", showDashboard: "Afficher les réactions", fullscreen: "Plein écran", hideToolbar: "Masquer la barre d’outils", showToolbar: "Afficher la barre d’outils", toolbar: "Outils" }
+  ? { presenter: "Présentation", home: "Accueil Call-in", loading: "Chargement de la présentation…", loaded: "Chargement de la présentation demandé", pdfPage: (page, pages) => `PDF ${page} / ${pages}`, open: "Ouvrir la présentation", audience: "Public", moderate: "Modération", hideDashboard: "Masquer les questions", showDashboard: "Afficher les questions", fullscreen: "Plein écran", hideToolbar: "Masquer la barre d’outils", showToolbar: "Afficher la barre d’outils", toolbar: "Outils" }
   : english
   ? { presenter: "Presenter", home: "Call-in product home", loading: "Loading slides…", loaded: "Slide load requested", pdfPage: (page, pages) => `PDF ${page} / ${pages}`, open: "Open deck", audience: "Audience", moderate: "Moderate", hideDashboard: "Hide responses", showDashboard: "Show responses", fullscreen: "Fullscreen", hideToolbar: "Hide toolbar", showToolbar: "Show presenter toolbar", toolbar: "Toolbar" }
   : { presenter: "講者頁", home: "Call-in 產品主頁", loading: "正在載入簡報…", loaded: "已送出簡報載入要求", pdfPage: (page, pages) => `PDF ${page} / ${pages}`, open: "另開簡報", audience: "觀眾頁", moderate: "主持", hideDashboard: "隱藏互動", showDashboard: "顯示互動", fullscreen: "全螢幕", hideToolbar: "收起工具列", showToolbar: "顯示講者工具列", toolbar: "工具列" };
@@ -63,8 +63,8 @@ if (french) {
   document.querySelector(".present-toolbar nav").setAttribute("aria-label", "Outils de présentation");
   document.querySelector(".deck-pane").setAttribute("aria-label", "Présentation");
   deckFrame.title = "Présentation";
-  dashboardPane.setAttribute("aria-label", "Réactions en direct");
-  document.querySelector("[data-dashboard-frame]").title = "Tableau de bord des réactions";
+  dashboardPane.setAttribute("aria-label", "Questions en direct");
+  document.querySelector("[data-dashboard-frame]").title = "Tableau de bord des questions";
   embedNote.textContent = "Si la présentation reste vide, son site interdit peut-être l’intégration. Utilisez « Ouvrir la présentation » ci-dessus.";
 }
 // The same-origin PDF viewer opens deck links in new tabs; without this flag the

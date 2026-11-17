@@ -78,8 +78,8 @@ for (const [file, translations] of [
     "正在載入簡報…": "Chargement de la présentation…", "講者工具": "Outils de présentation",
     "另開簡報": "Ouvrir la présentation", "觀眾頁": "Public", "管理": "Modération",
     "全螢幕": "Plein écran", "收起工具列": "Masquer la barre d’outils", "顯示講者工具列": "Afficher la barre d’outils",
-    "工具列": "Outils", "隱藏互動": "Masquer les réactions", "現場互動 dashboard": "Tableau de bord des réactions",
-    "現場互動": "Réactions en direct", "簡報區若保持空白，原網站可能禁止內嵌；請使用上方「另開簡報」。": "Si la présentation reste vide, son site interdit peut-être l’intégration. Utilisez « Ouvrir la présentation » ci-dessus.",
+    "工具列": "Outils", "隱藏互動": "Masquer les questions", "現場互動 dashboard": "Tableau de bord des questions",
+    "現場互動": "Questions en direct", "簡報區若保持空白，原網站可能禁止內嵌；請使用上方「另開簡報」。": "Si la présentation reste vide, son site interdit peut-être l’intégration. Utilisez « Ouvrir la présentation » ci-dessus.",
     "簡報": "Présentation", "講者頁": "Présentation",
   }],
   ["present/pdf-viewer.html", {

@@ -19,12 +19,9 @@ document.querySelectorAll("[data-qr-image]").forEach((image) => {
 document.querySelectorAll("[data-audience-url]").forEach((link) => {
   link.href = eventPage("/");
 });
-const pollsRoot = document.querySelector("#dashboard-polls");
 const questionsRoot = document.querySelector("#dashboard-questions");
 const statusEl = document.querySelector("[data-status]");
 const reactionStage = document.querySelector("[data-reaction-stage]");
-const tabButtons = [...document.querySelectorAll("[data-dashboard-tab]")];
-const tabPanels = [...document.querySelectorAll("[data-dashboard-panel]")];
 const lensLabels = Object.fromEntries(config.question.lenses.map((lens) => [lens.id, lens.label]));
 
 function render(state) {
@@ -38,29 +35,6 @@ function render(state) {
       ] || mode
     : mode.toUpperCase();
   modeEl.dataset.mode = mode;
-  document.querySelector("[data-poll-total]").textContent = t(
-    `${state.polls.length} polls`,
-    `${state.polls.length} 場`,
-    `${state.polls.length} sondage${state.polls.length > 1 ? "s" : ""}`,
-  );
-  pollsRoot.innerHTML = state.polls
-    .map(
-      (poll, index) => `
-        <article class="dashboard-poll">
-          <div class="dashboard-poll-head"><b>${String(index + 1).padStart(2, "0")}</b><span>${poll.total} ${t("votes", "票")}</span></div>
-          <h3>${escapeHtml(poll.question)}</h3>
-          ${poll.options
-            .map((option, optionIndex) => {
-              const percent = poll.total
-                ? Math.round((poll.counts[optionIndex] / poll.total) * 100)
-                : 0;
-              return `<div class="dashboard-result-row"><span>${escapeHtml(option)}</span><div><i style="--pct:${percent}%"></i></div><b>${poll.counts[optionIndex]} ${t("votes", "票")}</b></div>`;
-            })
-            .join("")}
-        </article>`,
-    )
-    .join("");
-
   document.querySelector("[data-question-count]").textContent = t(
     `${state.questions.length} questions`,
     `${state.questions.length} 個問題`,
@@ -89,27 +63,6 @@ function render(state) {
         .join("")
     : `<div class="empty">${t("Waiting for the first question", "等待第一個問題")}</div>`;
 }
-
-function setDashboardTab(name) {
-  const next = name === "polls" ? "polls" : "live";
-  tabButtons.forEach((button) => {
-    const active = button.dataset.dashboardTab === next;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-selected", String(active));
-  });
-  tabPanels.forEach((panel) => {
-    panel.hidden = panel.dataset.dashboardPanel !== next;
-  });
-}
-
-tabButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    const next = button.dataset.dashboardTab;
-    setDashboardTab(next);
-    history.replaceState(null, "", next === "polls" ? "#polls" : "#live");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
-});
 
 function formatTime(value) {
   const date = new Date(Number(value));
@@ -181,7 +134,6 @@ fetch(`${apiBase}/state`)
   .then((response) => response.json())
   .then(render)
   .catch(() => {});
-setDashboardTab(location.hash === "#polls" ? "polls" : "live");
 connect();
 
 function applyConfig(nextConfig) {
