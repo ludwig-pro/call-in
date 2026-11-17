@@ -47,6 +47,7 @@ form.addEventListener("submit", async (event) => {
   if (sourceMode === "upload") {
     data.delete("deckUrl");
     if (!file) return showError(t("Choose a PDF to upload.", "請選擇要上傳的 PDF。", "Choisissez un PDF à importer."));
+    if (file.size === 0) return showError(t("The PDF is empty.", "PDF 是空的。", "Le fichier PDF est vide."));
     if (file.size > 20 * 1024 * 1024) return showError(t("The PDF must be 20MB or smaller.", "PDF 不能超過 20MB。", "Le PDF ne doit pas dépasser 20 Mo."));
     if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") return showError(t("Choose a PDF file.", "請選擇 PDF 檔案。", "Choisissez un fichier PDF."));
   } else if (sourceMode === "url") {

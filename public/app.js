@@ -8,27 +8,6 @@ const button = form.querySelector("button[type=submit]");
 let voterId;
 let submitted = false;
 
-try {
-  const response = await fetch(eventApi("/config"));
-  if (!response.ok) throw new Error("config unavailable");
-  const config = await response.json();
-  document.title = `${config.title} · Poser une question`;
-  document.querySelector("[data-event-title]").textContent = config.title;
-  const voterKey = `${config.eventId}:live-deck-voter`;
-  voterId = localStorage.getItem(voterKey) || crypto.randomUUID();
-  localStorage.setItem(voterKey, voterId);
-  post("/me", { voterId }).then((state) => {
-    if (!submitted && state.participant) {
-      nickname.value = state.participant.alias;
-      nickname.readOnly = true;
-    }
-  }).catch(() => {});
-} catch {
-  button.disabled = true;
-  message.classList.add("error");
-  message.textContent = "Impossible de charger l’événement. Actualisez la page pour réessayer.";
-}
-
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!form.reportValidity() || !voterId) return;
@@ -49,6 +28,28 @@ form.addEventListener("submit", async (event) => {
     button.disabled = false;
   }
 });
+
+try {
+  const response = await fetch(eventApi("/config"));
+  if (!response.ok) throw new Error("config unavailable");
+  const config = await response.json();
+  document.title = `${config.title} · Poser une question`;
+  document.querySelector("[data-event-title]").textContent = config.title;
+  const voterKey = `${config.eventId}:live-deck-voter`;
+  voterId = localStorage.getItem(voterKey) || crypto.randomUUID();
+  localStorage.setItem(voterKey, voterId);
+  button.disabled = false;
+  post("/me", { voterId }).then((state) => {
+    if (!submitted && state.participant) {
+      nickname.value = state.participant.alias;
+      nickname.readOnly = true;
+    }
+  }).catch(() => {});
+} catch {
+  button.disabled = true;
+  message.classList.add("error");
+  message.textContent = "Impossible de charger l’événement. Actualisez la page pour réessayer.";
+}
 
 async function post(path, data) {
   const response = await fetch(eventApi(path), {

@@ -28,6 +28,15 @@ async function question(api: string, body: Record<string, unknown>) {
 }
 
 describe("meetup questions", () => {
+  it("rejects a selected empty PDF rather than creating an event without a deck", async () => {
+    const form = new FormData();
+    form.set("title", "PDF vide");
+    form.set("deckFile", new File([], "slides.pdf", { type: "application/pdf" }));
+    const response = await SELF.fetch("https://example.com/api/events", { method: "POST", body: form });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "File is not a valid PDF" });
+  });
+
   it("creates an event with only a title and keeps its private setup and moderator links", async () => {
     const createdResponse = await SELF.fetch("https://example.com/api/events", {
       method: "POST", headers, body: JSON.stringify({ title: "Soirée BordeauxJS", locale: "fr" }),

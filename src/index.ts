@@ -121,7 +121,7 @@ async function createHostedEvent(request: Request, env: Env): Promise<Response> 
     deckUrl = formText(form, "deckUrl");
     locale = normalizeHostedLocale(formText(form, "locale"));
     const upload = form.get("deckFile");
-    deckFile = upload instanceof File && upload.size ? upload : null;
+    deckFile = upload instanceof File && (upload.name || upload.size) ? upload : null;
   } else {
     const body = await readSmallJsonRequest(request);
     if (!isRecord(body)) return jsonError("invalid request", 400);

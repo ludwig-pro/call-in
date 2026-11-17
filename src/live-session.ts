@@ -469,7 +469,8 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   private async seedDemoBaseline(config: PublicEventConfig, now: number): Promise<void> {
-    const difficultyCounts = [2, 5, 29, 7, 2];
+    const french = config.locale.toLowerCase().startsWith("fr");
+    const difficultyCounts = french ? [] : [2, 5, 29, 7, 2];
     let difficultyIndex = 0;
     for (let score = 1; score <= difficultyCounts.length; score += 1) {
       for (let count = 0; count < (difficultyCounts[score - 1] ?? 0); count += 1) {
@@ -484,20 +485,19 @@ export class LiveSession extends DurableObject<Env> {
     }
 
     const english = config.locale.toLowerCase().startsWith("en");
-    const french = config.locale.toLowerCase().startsWith("fr");
     const questions: Array<{
       text: string;
-      lens: QuestionLens;
-      difficulty: number;
+      lens: QuestionLens | null;
+      difficulty: number | null;
       upvotes: number;
     }> = french
       ? [
-          { text: "Faut-il installer une application pour participer ?", lens: "clarify", difficulty: 2, upvotes: 8 },
-          { text: "Le PDF et les réponses sont-ils supprimés après sept jours ?", lens: "keeper", difficulty: 3, upvotes: 6 },
-          { text: "Puis-je partager le lien de modération avec une autre personne ?", lens: "clarify", difficulty: 3, upvotes: 5 },
-          { text: "Que se passe-t-il si la connexion de la salle est instable ?", lens: "keeper", difficulty: 4, upvotes: 4 },
-          { text: "Peut-on aussi utiliser cet outil pour un atelier ?", lens: "bridge", difficulty: 2, upvotes: 7 },
-          { text: "Peut-on poser une question sans utiliser son vrai nom ?", lens: "chorus", difficulty: 3, upvotes: 5 },
+          { text: "Faut-il installer une application pour participer ?", lens: null, difficulty: null, upvotes: 8 },
+          { text: "Le PDF et les réponses sont-ils supprimés après sept jours ?", lens: null, difficulty: null, upvotes: 6 },
+          { text: "Puis-je partager le lien de modération avec une autre personne ?", lens: null, difficulty: null, upvotes: 5 },
+          { text: "Que se passe-t-il si la connexion de la salle est instable ?", lens: null, difficulty: null, upvotes: 4 },
+          { text: "Peut-on aussi utiliser cet outil pour un atelier ?", lens: null, difficulty: null, upvotes: 7 },
+          { text: "Peut-on poser une question sans utiliser son vrai nom ?", lens: null, difficulty: null, upvotes: 5 },
         ]
       : english
       ? [

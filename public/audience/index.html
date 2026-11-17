@@ -15,13 +15,13 @@
         <h1 data-event-title>Posez votre question</h1>
         <p>Une question pour les intervenants ? Écrivez-la ici.</p>
       </header>
-      <form id="question-form">
+      <form id="question-form" method="post">
         <label for="nickname">Votre pseudo</label>
         <input id="nickname" name="nickname" autocomplete="nickname" minlength="1" maxlength="24" required placeholder="Comment vous appeler ?" />
         <p class="hint">Votre pseudo reste le même pendant cet événement.</p>
         <label for="question">Votre question</label>
         <textarea id="question" name="question" minlength="4" maxlength="280" rows="5" required placeholder="Écrivez votre question…"></textarea>
-        <button type="submit">Envoyer</button>
+        <button type="submit" disabled>Envoyer</button>
         <p class="message" data-message role="status" aria-live="polite"></p>
       </form>
     </main>

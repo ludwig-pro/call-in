@@ -254,7 +254,9 @@ describe("Call-in Worker", () => {
     expect(demo.locale).toBe("fr");
     expect(demo.deckUrl).toBe("https://example.com/fr/demo/slides/");
     const stateResponse = await SELF.fetch("https://example.com/api/demo/fr/state");
-    const state = await stateResponse.json<{ questions: Array<{ text: string }> }>();
+    const state = await stateResponse.json<{ difficulty: { total: number }; questions: Array<{ text: string; lens: null; difficulty: null }> }>();
+    expect(state.difficulty.total).toBe(0);
+    expect(state.questions.every((question) => question.lens === null && question.difficulty === null)).toBe(true);
     expect(state.questions.some((question) => question.text.includes("application pour participer"))).toBe(true);
   });
 
