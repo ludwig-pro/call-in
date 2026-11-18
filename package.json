@@ -53,7 +53,7 @@
     "deploy:dry:production": "wrangler deploy --dry-run --env production"
   },
   "dependencies": {
-    "pdfjs-dist": "6.2.108",
+    "pdfjs-dist": "6.5.438",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

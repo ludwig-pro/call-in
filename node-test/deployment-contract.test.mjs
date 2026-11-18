@@ -16,6 +16,8 @@ test("keeps optional self-hosting deployable without adding setup steps to the h
   assert.equal(wrangler.assets.directory, "./public");
   assert.deepEqual(wrangler.assets.run_worker_first, [
     "/api/*",
+    "/present/pdf-viewer",
+    "/present/pdf-viewer.html",
     "/new",
     "/new/*",
     "/en/new",

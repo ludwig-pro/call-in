@@ -61,3 +61,6 @@ html, body { width: 100%; height: 100%; margin: 0; }
   .dashboard-toggle { right:10px; bottom:10px; min-height:36px; }
 }
 @media (prefers-reduced-motion:reduce) { .present-toolbar, .dashboard-toggle, .dashboard-toggle svg { transition:none; } }
+
+.present-page.external-deck .present-stage { grid-template-columns: 1fr; }
+.present-page.external-deck .deck-pane { display: none; }

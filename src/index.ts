@@ -1,3 +1,4 @@
+import { creationGuard, creationSettings } from "./creation-guard";
 import QRCode from "qrcode";
 import { timingSafeEqual } from "node:crypto";
 import { EVENT_CONFIG, QUESTION_LENSES, REACTION_KINDS, validateEventConfig } from "./config";
@@ -10,7 +11,7 @@ import type {
   ReactionKind,
   SessionMode,
 } from "./types";
-import { isRecord, readSmallJsonRequest } from "./validation";
+import { isRecord, readBoundedFormData, readSmallJsonRequest } from "./validation";
 
 export { LiveSession } from "./live-session";
 
@@ -37,6 +38,30 @@ export default {
       }
 
       if (!url.pathname.startsWith("/api/")) {
+        if (url.pathname === "/present/pdf-viewer" || url.pathname === "/present/pdf-viewer.html") {
+          const asset = await env.ASSETS.fetch(request);
+          const headers = new Headers(asset.headers);
+          // An opaque sandbox has no reliable 'self' in all browser engines.
+          // Name the public parser assets and event files it is allowed to read.
+          const origin = url.origin;
+          let pdfSource = "'none'";
+          const file = URL.canParse(url.searchParams.get("file") || "", origin)
+            ? new URL(url.searchParams.get("file") || "", origin) : null;
+          if (file?.origin === origin && /^\/api\/events\/[a-f0-9]{32}\/deck\.pdf$/.test(file.pathname)) {
+            pdfSource = origin + file.pathname;
+          }
+          headers.set("Cache-Control", "private, no-store");
+          headers.set("Content-Security-Policy", [
+            "sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox",
+            "default-src 'none'", "base-uri 'none'", "form-action 'none'", "frame-ancestors 'self'",
+            `script-src ${origin}/present/pdf-viewer.js ${origin}/present/pdf-links.js ${origin}/vendor/pdfjs/ ${origin}/brand/theme.js`,
+            `worker-src data: ${origin}/vendor/pdfjs/pdf.worker.mjs`,
+            `connect-src ${pdfSource}`,
+            `style-src ${origin} 'unsafe-inline'`, `font-src ${origin}/brand/ blob: data:`,
+            "img-src blob: data:",
+          ].join("; "));
+          return new Response(asset.body, { status: asset.status, headers });
+        }
         const creatorRedirect = creatorRedirectTarget(url.pathname);
         if (creatorRedirect && ["GET", "HEAD"].includes(request.method)) {
           return Response.redirect(new URL(creatorRedirect, url.origin).toString(), 308);
@@ -53,6 +78,9 @@ export default {
         return env.ASSETS.fetch(new Request(assetUrl, request));
       }
 
+      if (url.pathname === "/api/creation-settings" && request.method === "GET") {
+        return noStore(Response.json(creationSettings(env)));
+      }
       if (url.pathname === "/api/events") {
         if (request.method !== "POST") return jsonError("method not allowed", 405);
         return withCors(await createHostedEvent(request, env), request, env);
@@ -105,6 +133,8 @@ export default {
 } satisfies ExportedHandler<Env>;
 
 async function createHostedEvent(request: Request, env: Env): Promise<Response> {
+  const denied = await creationGuard(request, env);
+  if (denied) return denied;
   const contentType = request.headers.get("Content-Type") || "";
   const contentLength = Number(request.headers.get("Content-Length") || "0");
   if (contentType.includes("multipart/form-data") && contentLength > maxHostedPdfBytes + 1024 * 1024) {
@@ -117,7 +147,7 @@ async function createHostedEvent(request: Request, env: Env): Promise<Response> 
   let locale: HostedLocale = "zh-Hant-TW";
   let deckFile: File | null = null;
   if (contentType.includes("multipart/form-data")) {
-    const form = await request.formData();
+    const form = await readBoundedFormData(request, maxHostedPdfBytes + 1024 * 1024);
     title = formText(form, "title");
     description = formText(form, "description");
     deckUrl = formText(form, "deckUrl");
@@ -143,7 +173,7 @@ async function createHostedEvent(request: Request, env: Env): Promise<Response> 
   const eventId = crypto.randomUUID().replaceAll("-", "");
   const adminToken = randomToken();
   const moderatorToken = randomToken();
-  const publicOrigin = hostedPublicOrigin(request);
+  const publicOrigin = new URL(request.url).origin;
   const apiBase = `${publicOrigin}/api/events/${eventId}`;
   const config = hostedEventConfig(
     eventId,
@@ -292,6 +322,9 @@ async function handleSessionApi(
     }
     if (request.method === "POST") {
       const config = await readSmallJsonRequest(request, 16_384);
+      if (hostedEventId && isRecord(config) && typeof config.deckUrl === "string" && config.deckUrl) {
+        assertHostedDeckUrl(config.deckUrl, request);
+      }
       return noStore(Response.json(await stub.updateEventConfig(config)));
     }
     return jsonError("method not allowed", 405);
@@ -642,30 +675,17 @@ function normalizeHostedLocale(value: string): HostedLocale {
   return locale.startsWith("fr") ? "fr" : locale.startsWith("en") ? "en" : "zh-Hant-TW";
 }
 
-function hostedPublicOrigin(request: Request): string {
-  const requestOrigin = new URL(request.url).origin;
-  for (const candidate of [request.headers.get("Origin"), request.headers.get("Referer")]) {
-    if (!candidate) continue;
-    try {
-      const parsed = new URL(candidate);
-      if (["localhost", "127.0.0.1"].includes(parsed.hostname) && ["http:", "https:"].includes(parsed.protocol)) {
-        return parsed.origin;
-      }
-    } catch {
-      // Ignore invalid browser headers and keep checking.
-    }
-  }
-  return requestOrigin;
-}
-
 async function assertHostedPdf(file: File): Promise<void> {
   if (file.size > maxHostedPdfBytes) throw new Error("PDF is too large (20 MB maximum)");
   if (file.size < 5) throw new Error("File is not a valid PDF");
   if (file.type && file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
     throw new Error("File must be a PDF");
   }
-  const signature = new TextDecoder().decode(await file.slice(0, 5).arrayBuffer());
-  if (signature !== "%PDF-") throw new Error("File is not a valid PDF");
+  const header = await file.slice(0, 12).text();
+  const trailer = await file.slice(-1024).text();
+  if (!/^%PDF-(?:1\.[0-7]|2\.0)[\r\n]/.test(header) || !/%%EOF[\x00\t\n\f\r ]*$/.test(trailer)) {
+    throw new Error("File is not a valid PDF");
+  }
 }
 
 function assertHostedDeckUrl(value: string, request: Request): void {

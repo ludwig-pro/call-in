@@ -8,7 +8,7 @@ Call-in permet au public d’un meetup de poser des questions en direct et de so
 
 1. **Créez l’événement.** Donnez-lui un titre. Vous pouvez ajouter un PDF jusqu’à 20 Mo ou coller un lien vers des slides en ligne.
 2. **Partagez le QR code.** Les participants rejoignent l’événement depuis leur navigateur. Ils choisissent un pseudo pour poser une question et peuvent soutenir les questions publiées. Aucun compte n’est requis.
-3. **Suivez et modérez les questions.** La vue présentateur affiche les questions à côté des slides. Le mur de questions peut s’ouvrir dans un onglet séparé pour être projeté. Le lien de modération permet notamment de publier ou de masquer une question, de la rétablir et de mettre les nouvelles questions en pause.
+3. **Suivez et modérez les questions.** La vue présentateur affiche les questions à côté du PDF ou des slides Google intégrées. Les autres présentations s’ouvrent dans un nouvel onglet, avec leur domaine indiqué. Le mur de questions peut s’ouvrir dans un onglet séparé pour être projeté. Le lien de modération permet notamment de publier ou de masquer une question, de la rétablir et de mettre les nouvelles questions en pause.
 
 Conservez les liens de configuration et de modération obtenus à la création. Partagez le lien public ou le QR code avec les participants et le lien privé de modération avec l’équipe qui en a besoin.
 

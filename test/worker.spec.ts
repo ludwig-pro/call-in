@@ -252,7 +252,7 @@ describe("Call-in Worker", () => {
     const form = new FormData();
     form.set("title", "Uploaded deck");
     form.set("locale", "en");
-    form.set("deckFile", new File(["%PDF-1.7\ncall-in-test"], "speaker deck.pdf", { type: "application/pdf" }));
+    form.set("deckFile", new File(["%PDF-1.7\ncall-in-test\n%%EOF\n"], "speaker deck.pdf", { type: "application/pdf" }));
     const createdResponse = await SELF.fetch("https://example.com/api/events", {
       method: "POST",
       body: form,
@@ -270,15 +270,17 @@ describe("Call-in Worker", () => {
     expect(deck.status).toBe(200);
     expect(deck.headers.get("content-type")).toBe("application/pdf");
     expect(deck.headers.get("cache-control")).toBe("private, no-store");
-    expect(deck.headers.get("content-disposition")).toContain("speaker%20deck.pdf");
-    expect(new TextDecoder().decode(await deck.arrayBuffer())).toBe("%PDF-1.7\ncall-in-test");
+    expect(deck.headers.get("content-disposition")).toMatch(/^attachment;.*speaker%20deck.pdf/);
+    expect(deck.headers.get("content-security-policy")).toContain("sandbox");
+    expect(deck.headers.get("access-control-allow-origin")).toBe("null");
+    expect(new TextDecoder().decode(await deck.arrayBuffer())).toBe("%PDF-1.7\ncall-in-test\n%%EOF\n");
   });
 
-  it("rejects a file that is named PDF but has no PDF signature", async () => {
+  it.each(["not actually a pdf", "%PDF-1.7\ntruncated"])("rejects an invalid or incomplete PDF (%s)", async (contents) => {
     const form = new FormData();
     form.set("title", "Invalid upload");
-    form.set("deckFile", new File(["not actually a pdf"], "fake.pdf", { type: "application/pdf" }));
-    const response = await SELF.fetch("https://example.com/api/events", { method: "POST", body: form });
+    form.set("deckFile", new File([contents], "fake.pdf", { type: "application/pdf" }));
+    const response = await SELF.fetch("https://example.com/api/events", { method: "POST", headers: { "CF-Connecting-IP": "192.0.2.82" }, body: form });
     expect(response.status).toBe(400);
     expect(await response.json<{ error: string }>()).toEqual({ error: "File is not a valid PDF" });
   });
@@ -409,7 +411,7 @@ describe("Call-in Worker", () => {
 
   it("temporarily holds a question after trusted reports and lets the moderator restore it", async () => {
     const author = crypto.randomUUID();
-    const flaggers = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
+    const flaggers = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()] as const;
     await register(author, "Question author");
     for (const [index, voterId] of flaggers.entries()) {
       await register(voterId, `Reporter ${index + 1}`);

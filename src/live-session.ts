@@ -1317,8 +1317,11 @@ export class LiveSession extends DurableObject<Env> {
     return new Response(body, {
       headers: {
         "Content-Type": deck.media_type,
+        "Content-Security-Policy": "sandbox; default-src 'none'; frame-ancestors 'none'",
+        "Access-Control-Allow-Origin": "null",
+        "Referrer-Policy": "no-referrer",
         "Content-Length": String(deck.size_bytes),
-        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(deck.filename)}`,
+        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(deck.filename)}`,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },

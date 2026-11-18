@@ -19,6 +19,7 @@ test("the organizer can create events repeatedly and confirm deletion from the r
     const deletions = [];
     let available = true;
     Object.defineProperty(globalThis, "fetch", { configurable: true, value: async (url, { body, method, headers }) => {
+      if (url === "/api/creation-settings") return Response.json({ siteKey: null });
       if (method === "DELETE") {
         deletions.push([url, headers.Authorization]);
         return { status: available ? 404 : 204 };
