@@ -9,13 +9,10 @@ const wranglerSource = await readFile(new URL("../wrangler.jsonc", import.meta.u
 const wrangler = JSON.parse(wranglerSource.split("\n").filter((line) => !line.trim().startsWith("//")).join("\n"));
 
 test("keeps optional self-hosting deployable without adding setup steps to the hosted flow", () => {
-  assert.match(
-    readme,
-    /\[!\[Deploy to Cloudflare\]\(https:\/\/deploy\.workers\.cloudflare\.com\/button\)\]\(https:\/\/deploy\.workers\.cloudflare\.com\/\?url=https:\/\/github\.com\/mashbean\/call-in\)/,
-  );
+  assert.match(readme, /https:\/\/github\.com\/mashbean\/call-in/);
+  assert.match(readme, /https:\/\/call-in\.bordeauxjs\.com\/#create/);
+  assert.match(readme, /\]\(\.\/SELFHOST\.md\)/);
   assert.equal(packageJson.scripts.deploy, "wrangler deploy");
-  assert.match(readme, /call-in\.mashbean\.net\/#create/);
-  assert.match(readme, /Self-host/);
   assert.equal(wrangler.assets.directory, "./public");
   assert.deepEqual(wrangler.assets.run_worker_first, [
     "/api/*",

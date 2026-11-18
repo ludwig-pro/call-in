@@ -4,7 +4,6 @@ import { anonymousLabelFor } from "./anon-labels";
 import { EVENT_CONFIG, QUESTION_LENSES, REACTION_KINDS, validateEventConfig } from "./config";
 import type {
   AudienceQuestion,
-  DifficultySnapshot,
   FlagReason,
   ModerationAction,
   ModerationReason,
@@ -22,7 +21,7 @@ import type {
   SessionMode,
   SessionSnapshot,
 } from "./types";
-import { assertDifficulty, assertVoterId, cleanText, isUuid } from "./validation";
+import { assertVoterId, cleanText, isUuid } from "./validation";
 
 type QuestionRow = {
   id: string;
@@ -30,7 +29,6 @@ type QuestionRow = {
   text: string;
   nickname: string;
   lens: QuestionLens | null;
-  difficulty: number | null;
   created_at: number;
   upvotes: number;
   visibility: QuestionVisibility;
@@ -103,7 +101,7 @@ type ExportData = {
   exportedAt: number;
   config: PublicEventConfig;
   snapshot: SessionSnapshot;
-  questions: QuestionRow[];
+  questions: Array<QuestionRow & { difficulty: number | null }>;
   participants: ParticipantRow[];
   questionFlags: QuestionFlagExport[];
   moderationActions: ModerationAction[];
@@ -470,51 +468,36 @@ export class LiveSession extends DurableObject<Env> {
 
   private async seedDemoBaseline(config: PublicEventConfig, now: number): Promise<void> {
     const french = config.locale.toLowerCase().startsWith("fr");
-    const difficultyCounts = french ? [] : [2, 5, 29, 7, 2];
-    let difficultyIndex = 0;
-    for (let score = 1; score <= difficultyCounts.length; score += 1) {
-      for (let count = 0; count < (difficultyCounts[score - 1] ?? 0); count += 1) {
-        this.ctx.storage.sql.exec(
-          "INSERT INTO difficulty_votes (voter_id, score, updated_at) VALUES (?, ?, ?)",
-          crypto.randomUUID(),
-          score,
-          now - (45 - difficultyIndex) * 13_000,
-        );
-        difficultyIndex += 1;
-      }
-    }
-
     const english = config.locale.toLowerCase().startsWith("en");
     const questions: Array<{
       text: string;
       lens: QuestionLens | null;
-      difficulty: number | null;
       upvotes: number;
     }> = french
       ? [
-          { text: "Faut-il installer une application pour participer ?", lens: null, difficulty: null, upvotes: 8 },
-          { text: "Le PDF et les réponses sont-ils supprimés après sept jours ?", lens: null, difficulty: null, upvotes: 6 },
-          { text: "Puis-je partager le lien de modération avec une autre personne ?", lens: null, difficulty: null, upvotes: 5 },
-          { text: "Que se passe-t-il si la connexion de la salle est instable ?", lens: null, difficulty: null, upvotes: 4 },
-          { text: "Peut-on aussi utiliser cet outil pour un atelier ?", lens: null, difficulty: null, upvotes: 7 },
-          { text: "Peut-on poser une question sans utiliser son vrai nom ?", lens: null, difficulty: null, upvotes: 5 },
+          { text: "Faut-il installer une application pour participer ?", lens: null, upvotes: 8 },
+          { text: "Le PDF et les réponses sont-ils supprimés après sept jours ?", lens: null, upvotes: 6 },
+          { text: "Puis-je partager le lien de modération avec une autre personne ?", lens: null, upvotes: 5 },
+          { text: "Que se passe-t-il si la connexion de la salle est instable ?", lens: null, upvotes: 4 },
+          { text: "Peut-on aussi utiliser cet outil pour un atelier ?", lens: null, upvotes: 7 },
+          { text: "Peut-on poser une question sans utiliser son vrai nom ?", lens: null, upvotes: 5 },
         ]
       : english
       ? [
-          { text: "Does the audience need to install an app to join from a phone?", lens: "clarify", difficulty: 2, upvotes: 8 },
-          { text: "Will the PDF and audience responses both disappear after seven days?", lens: "keeper", difficulty: 3, upvotes: 6 },
-          { text: "Can I hand the moderator link to another person on the event team?", lens: "clarify", difficulty: 3, upvotes: 5 },
-          { text: "What happens to responses when the venue connection is unstable?", lens: "keeper", difficulty: 4, upvotes: 4 },
-          { text: "Would this also work for a classroom or an in-person workshop?", lens: "bridge", difficulty: 2, upvotes: 7 },
-          { text: "Can audience members ask questions without showing their real names?", lens: "chorus", difficulty: 3, upvotes: 5 },
+          { text: "Does the audience need to install an app to join from a phone?", lens: "clarify", upvotes: 8 },
+          { text: "Will the PDF and audience responses both disappear after seven days?", lens: "keeper", upvotes: 6 },
+          { text: "Can I hand the moderator link to another person on the event team?", lens: "clarify", upvotes: 5 },
+          { text: "What happens to responses when the venue connection is unstable?", lens: "keeper", upvotes: 4 },
+          { text: "Would this also work for a classroom or an in-person workshop?", lens: "bridge", upvotes: 7 },
+          { text: "Can audience members ask questions without showing their real names?", lens: "chorus", upvotes: 5 },
         ]
       : [
-          { text: "觀眾只用手機加入時，需要另外安裝 App 嗎？", lens: "clarify", difficulty: 2, upvotes: 8 },
-          { text: "PDF 與觀眾回應會在七天後一起刪除嗎？", lens: "keeper", difficulty: 3, upvotes: 6 },
-          { text: "可以把主持私密連結交給活動團隊的另一個人嗎？", lens: "clarify", difficulty: 3, upvotes: 5 },
-          { text: "現場網路不穩時，觀眾送出的回應會怎麼處理？", lens: "keeper", difficulty: 4, upvotes: 4 },
-          { text: "除了線上演講，也適合實體教室或工作坊嗎？", lens: "bridge", difficulty: 2, upvotes: 7 },
-          { text: "觀眾可以不用真名、以活動暱稱提問嗎？", lens: "chorus", difficulty: 3, upvotes: 5 },
+          { text: "觀眾只用手機加入時，需要另外安裝 App 嗎？", lens: "clarify", upvotes: 8 },
+          { text: "PDF 與觀眾回應會在七天後一起刪除嗎？", lens: "keeper", upvotes: 6 },
+          { text: "可以把主持私密連結交給活動團隊的另一個人嗎？", lens: "clarify", upvotes: 5 },
+          { text: "現場網路不穩時，觀眾送出的回應會怎麼處理？", lens: "keeper", upvotes: 4 },
+          { text: "除了線上演講，也適合實體教室或工作坊嗎？", lens: "bridge", upvotes: 7 },
+          { text: "觀眾可以不用真名、以活動暱稱提問嗎？", lens: "chorus", upvotes: 5 },
         ];
 
     questions.forEach((question, index) => {
@@ -524,15 +507,14 @@ export class LiveSession extends DurableObject<Env> {
       const nickname = french ? `Participant de démonstration #${index + 1}` : english ? `Demo guest #${index + 1}` : `示範聽眾 #${index + 1}`;
       this.ctx.storage.sql.exec(
         `INSERT INTO questions
-          (id, voter_id, text, nickname, lens, difficulty, created_at, visibility,
+          (id, voter_id, text, nickname, lens, created_at, visibility,
            publish_at, moderation_reason, moderated_at, moderated_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'public', NULL, NULL, NULL, NULL)`,
+         VALUES (?, ?, ?, ?, ?, ?, 'public', NULL, NULL, NULL, NULL)`,
         questionId,
         voterId,
         question.text,
         nickname,
         question.lens,
-        question.difficulty,
         createdAt,
       );
       for (let vote = 0; vote < question.upvotes; vote += 1) {
@@ -558,7 +540,7 @@ export class LiveSession extends DurableObject<Env> {
     const rows = this.ctx.storage.sql
       .exec<QuestionRow>(`
         SELECT
-          q.id, q.voter_id, q.text, q.nickname, q.lens, q.difficulty, q.created_at,
+          q.id, q.voter_id, q.text, q.nickname, q.lens, q.created_at,
           q.visibility, q.publish_at, q.moderation_reason, q.moderated_at,
           COUNT(qv.question_id) AS upvotes
         FROM questions q
@@ -596,7 +578,7 @@ export class LiveSession extends DurableObject<Env> {
     const questions = this.ctx.storage.sql
       .exec<QuestionRow>(`
         SELECT
-          q.id, q.voter_id, q.text, q.nickname, q.lens, q.difficulty, q.created_at,
+          q.id, q.voter_id, q.text, q.nickname, q.lens, q.created_at,
           q.visibility, q.publish_at, q.moderation_reason, q.moderated_at,
           COUNT(qv.question_id) AS upvotes
         FROM questions q
@@ -609,33 +591,10 @@ export class LiveSession extends DurableObject<Env> {
       .toArray()
       .map(toAudienceQuestion);
 
-    const difficultyCounts = new Array<number>(5).fill(0);
-    const difficultyRows = this.ctx.storage.sql
-      .exec<{ score: number; count: number }>(
-        "SELECT score, COUNT(*) AS count FROM difficulty_votes GROUP BY score",
-      )
-      .toArray();
-    for (const row of difficultyRows) {
-      if (row.score >= 1 && row.score <= 5) difficultyCounts[row.score - 1] = row.count;
-    }
-    const difficultyTotal = difficultyCounts.reduce((sum, count) => sum + count, 0);
-    const weightedDifficulty = difficultyCounts.reduce(
-      (sum, count, index) => sum + count * (index + 1),
-      0,
-    );
-    const difficulty: DifficultySnapshot = {
-      counts: difficultyCounts,
-      total: difficultyTotal,
-      average: difficultyTotal
-        ? Math.round((weightedDifficulty / difficultyTotal) * 10) / 10
-        : null,
-    };
-
     this.snapshotCache = {
       updatedAt: Date.now(),
       session: { mode: this.getSessionMode() },
       polls,
-      difficulty,
       questions,
     };
     return this.snapshotCache;
@@ -690,7 +649,7 @@ export class LiveSession extends DurableObject<Env> {
     const questions = this.ctx.storage.sql
       .exec<QuestionRow>(`
         SELECT
-          q.id, q.voter_id, q.text, q.nickname, q.lens, q.difficulty, q.created_at,
+          q.id, q.voter_id, q.text, q.nickname, q.lens, q.created_at,
           q.visibility, q.publish_at, q.moderation_reason, q.moderated_at,
           COUNT(qv.question_id) AS upvotes
         FROM questions q
@@ -785,16 +744,13 @@ export class LiveSession extends DurableObject<Env> {
     text: string,
     nickname: string,
     lens: QuestionLens | null,
-    difficulty: number | null,
     voterId: string,
   ): Promise<QuestionSubmission> {
     const cleanedText = cleanText(text, 280);
     const cleanedNickname = cleanText(nickname, 24);
     assertVoterId(voterId);
     if (cleanedText.length < 4) throw new Error("question too short");
-    if ((lens === null) !== (difficulty === null)) throw new Error("invalid question context");
     if (lens !== null && !QUESTION_LENSES.has(lens)) throw new Error("invalid question lens");
-    if (difficulty !== null) assertDifficulty(difficulty);
 
     const config = this.getEventConfig();
     const moderation = config.moderation;
@@ -859,14 +815,13 @@ export class LiveSession extends DurableObject<Env> {
       const id = crypto.randomUUID();
       this.ctx.storage.sql.exec(
         `INSERT INTO questions
-          (id, voter_id, text, nickname, lens, difficulty, created_at, visibility, publish_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (id, voter_id, text, nickname, lens, created_at, visibility, publish_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         id,
         voterId,
         cleanedText,
         publicLabel,
         lens,
-        difficulty,
         now,
         visibility,
         publishAt,
@@ -876,7 +831,6 @@ export class LiveSession extends DurableObject<Env> {
         text: cleanedText,
         nickname: publicLabel,
         lens,
-        difficulty,
         createdAt: now,
         upvotes: 0,
         visibility,
@@ -889,26 +843,6 @@ export class LiveSession extends DurableObject<Env> {
     const snapshot = await this.broadcastSnapshot();
     const { publishAt: _publishAt, ...ownQuestion } = submission;
     return { snapshot, submission: ownQuestion };
-  }
-
-  async setDifficulty(score: number, voterId: string): Promise<SessionSnapshot> {
-    assertVoterId(voterId);
-    assertDifficulty(score);
-    const snapshot = await this.snapshot();
-    const previous = this.ctx.storage.sql
-      .exec<{ score: number }>("SELECT score FROM difficulty_votes WHERE voter_id = ?", voterId)
-      .toArray()[0];
-    this.ctx.storage.sql.exec(
-      `INSERT INTO difficulty_votes (voter_id, score, updated_at)
-       VALUES (?, ?, ?)
-       ON CONFLICT (voter_id)
-       DO UPDATE SET score = excluded.score, updated_at = excluded.updated_at`,
-      voterId,
-      score,
-      Date.now(),
-    );
-    this.updateDifficultySnapshot(snapshot.difficulty, previous?.score, score);
-    return this.broadcastSnapshot(this.touch(snapshot));
   }
 
   async upvote(questionId: string, voterId: string, supported?: boolean): Promise<SessionSnapshot> {
@@ -1067,7 +1001,7 @@ export class LiveSession extends DurableObject<Env> {
     const questions = this.ctx.storage.sql
       .exec<QuestionRow>(`
         SELECT
-          q.id, q.voter_id, q.text, q.nickname, q.lens, q.difficulty, q.created_at,
+          q.id, q.voter_id, q.text, q.nickname, q.lens, q.created_at,
           q.visibility, q.publish_at, q.moderation_reason, q.moderated_at,
           (SELECT COUNT(*) FROM question_votes qv WHERE qv.question_id = q.id) AS upvotes,
           (SELECT COUNT(*) FROM question_flags qf WHERE qf.question_id = q.id AND qf.status = 'pending') AS flag_count,
@@ -1191,7 +1125,7 @@ export class LiveSession extends DurableObject<Env> {
 
   async exportData(): Promise<ExportData> {
     const questions = this.ctx.storage.sql
-      .exec<QuestionRow>(`
+      .exec<ExportData["questions"][number]>(`
         SELECT
           q.id, q.voter_id, q.text, q.nickname, q.lens, q.difficulty, q.created_at,
           q.visibility, q.publish_at, q.moderation_reason, q.moderated_at,
@@ -1530,29 +1464,6 @@ export class LiveSession extends DurableObject<Env> {
     return snapshot;
   }
 
-  private updateDifficultySnapshot(
-    snapshot: DifficultySnapshot,
-    previousScore: number | undefined,
-    nextScore: number,
-  ): void {
-    if (previousScore === nextScore) return;
-    if (previousScore) {
-      const previousCount = snapshot.counts[previousScore - 1];
-      if (typeof previousCount === "number") snapshot.counts[previousScore - 1] = previousCount - 1;
-    } else {
-      snapshot.total += 1;
-    }
-    const nextCount = snapshot.counts[nextScore - 1];
-    if (typeof nextCount === "number") snapshot.counts[nextScore - 1] = nextCount + 1;
-    const weighted = snapshot.counts.reduce(
-      (sum, count, index) => sum + count * (index + 1),
-      0,
-    );
-    snapshot.average = snapshot.total
-      ? Math.round((weighted / snapshot.total) * 10) / 10
-      : null;
-  }
-
   private async broadcastSnapshot(snapshot?: SessionSnapshot): Promise<SessionSnapshot> {
     const currentSnapshot = snapshot ?? (await this.snapshot());
     const payload = JSON.stringify({ type: "snapshot", data: currentSnapshot });
@@ -1606,7 +1517,6 @@ function toAudienceQuestion(row: QuestionRow): AudienceQuestion {
     text: row.text,
     nickname: row.nickname,
     lens: row.lens,
-    difficulty: row.difficulty,
     createdAt: row.created_at,
     upvotes: row.upvotes,
   };

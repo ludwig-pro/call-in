@@ -351,14 +351,11 @@ async function handleSessionApi(
 
   if (path === "/question") {
     const hasLens = body.lens !== undefined && body.lens !== null;
-    const hasDifficulty = body.difficulty !== undefined && body.difficulty !== null;
     if (
       typeof body.text !== "string" ||
       (typeof body.nickname !== "string" && body.nickname !== undefined) ||
       typeof body.voterId !== "string" ||
-      hasLens !== hasDifficulty ||
       (hasLens && (typeof body.lens !== "string" || !QUESTION_LENSES.has(body.lens as QuestionLens))) ||
-      (hasDifficulty && typeof body.difficulty !== "number") ||
       (!hasLens && typeof body.nickname !== "string")
     ) {
       return withCors(jsonError("invalid question", 400), request, env);
@@ -369,20 +366,12 @@ async function handleSessionApi(
           body.text,
           typeof body.nickname === "string" ? body.nickname : "",
           hasLens ? body.lens as QuestionLens : null,
-          hasDifficulty ? body.difficulty as number : null,
           body.voterId,
         ),
       ),
       request,
       env,
     );
-  }
-
-  if (path === "/difficulty") {
-    if (typeof body.score !== "number" || typeof body.voterId !== "string") {
-      return withCors(jsonError("invalid difficulty", 400), request, env);
-    }
-    return withCors(Response.json(await stub.setDifficulty(body.score, body.voterId)), request, env);
   }
 
   if (path === "/upvote") {
@@ -450,17 +439,11 @@ function hostedEventConfig(
     description:
       description ||
       (english
-        ? "Scan the QR code to share your understanding, questions, and live reactions."
-        : "掃描 QR Code，回報理解程度、提出問題或送出即時反應。"),
+        ? "Scan the QR code to ask a question."
+        : "掃描 QR Code 即可提問。"),
     dashboardTitle: english ? `${title} · Live call-in` : `${title}・現場叩應`,
     deckUrl,
     locale,
-    difficulty: {
-      title: english ? "How easy is this to follow?" : "現在的理解難度如何？",
-      labels: english
-        ? ["Too easy", "Easy", "Just right", "Hard", "Lost"]
-        : ["太簡單", "容易", "剛剛好", "有點難", "跟丟了"],
-    },
     question: {
       title: english ? "Ask anytime" : "隨時提問",
       placeholder: english
@@ -528,12 +511,8 @@ function hostedEventConfig(
         ],
     polls: [],
     ...(locale === "fr" ? {
-      description: description || "Scannez le QR code pour partager vos questions, vos réactions et votre compréhension.",
+      description: description || "Scannez le QR code pour poser vos questions.",
       dashboardTitle: `${title} · Questions en direct`,
-      difficulty: {
-        title: "Comment trouvez-vous le rythme de la présentation ?",
-        labels: ["Trop facile", "Facile", "Adapté", "Difficile", "Je décroche"],
-      },
       question: {
         title: "Posez vos questions",
         placeholder: "Qu’aimeriez-vous éclaircir ou approfondir ?",
@@ -576,10 +555,10 @@ function permanentDemoConfig(locale: HostedLocale, origin: string): PublicEventC
     EVENT_CONFIG.eventId,
     locale === "fr" ? "Démonstration Call-in" : english ? "Call-in permanent demo" : "Call-in 常駐 Demo",
     locale === "fr"
-      ? "Scannez le QR code et essayez les interactions en direct."
+      ? "Scannez le QR code pour poser une question ou soutenir celles de la démo."
       : english
-      ? "Scan the QR code and try the same live interaction flow used in a real event."
-      : "掃描 QR Code，直接體驗正式活動使用的難度、提問與即時反應流程。",
+      ? "Scan the QR code to ask a question or support one in the demo."
+      : "掃描 QR Code 即可提出問題或支持示範中的提問。",
     locale === "fr" ? `${origin}/fr/demo/slides/` : "https://mashbean.net/decks/isf-0427/",
     permanentDemoCreatedAt,
     locale,

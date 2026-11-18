@@ -47,12 +47,6 @@ export function assertVoterId(voterId: string): void {
   if (!isUuid(voterId)) throw new Error("invalid voter");
 }
 
-export function assertDifficulty(score: number): void {
-  if (!Number.isInteger(score) || score < 1 || score > 5) {
-    throw new Error("invalid difficulty");
-  }
-}
-
 export function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

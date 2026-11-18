@@ -3,11 +3,6 @@ export const french = {
   "Audience interaction": "Interactions du public",
   "Ask anytime": "Posez vos questions",
   "Quick polls": "Sondages",
-  "LIVE DIFFICULTY": "COMPRÉHENSION EN DIRECT",
-  "Current difficulty": "Niveau de difficulté actuel",
-  "Live difficulty distribution": "Répartition des niveaux de difficulté",
-  "Waiting for the first response": "En attente de la première réponse",
-  "Drag to update automatically": "Déplacez le curseur pour répondre",
   "Send a live reaction": "Envoyer une réaction",
   "It appears on the presenter dashboard immediately": "Elle apparaît aussitôt sur l’écran de présentation",
   "BEFORE YOU ASK": "AVANT DE POSER UNE QUESTION",
@@ -17,10 +12,8 @@ export const french = {
   "I agree to follow this code of conduct. My event name will stay fixed after I continue.": "J’accepte les règles de discussion. Mon pseudo restera le même pendant cet événement.",
   "Agree and continue": "Accepter et continuer",
   "Your event name": "Votre pseudo",
-  "Set the difficulty above": "Indiquez votre niveau de difficulté ci-dessus",
   "Your latest score is saved with the question": "Votre dernière réponse accompagne votre question",
   "Write what feels unclear or worth following up": "Écrivez ce que vous souhaitez éclaircir ou approfondir",
-  "Ask when it feels too hard, too easy, or worth exploring": "Posez votre question, quel que soit votre niveau de compréhension",
   "Your question": "Votre question",
   "A question needs at least 4 characters so the room can tell what you are asking": "Votre question doit contenir au moins 4 caractères",
   "How should the room take up this question?": "Comment souhaitez-vous aborder cette question ?",
@@ -35,12 +28,9 @@ export const french = {
   "Click to enlarge the QR code": "Cliquer pour agrandir le QR code",
   "Scan to join the live audience page": "Scannez pour rejoindre la page du public",
   "Scan to join": "Scannez pour participer",
-  "Difficulty · questions · emoji": "Compréhension · questions · réactions",
   "Dashboard views": "Vues du tableau de bord",
   "Live": "En direct",
   "Poll results": "Résultats des sondages",
-  "DIFFICULTY": "COMPRÉHENSION",
-  "Live difficulty": "Compréhension en direct",
   "Live reactions": "Réactions en direct",
   "Q&A POOL": "QUESTIONS DU PUBLIC",
   "POLL": "SONDAGE",
@@ -139,15 +129,8 @@ export const french = {
 
 // Only upstream defaults are translated; event-specific text is left untouched.
 const defaults = {
-  "Scan the QR code to share your understanding, questions, and live reactions.": "Scannez le QR code pour partager vos questions, vos réactions et votre compréhension.",
-  "掃描 QR Code，回報理解程度、提出問題或送出即時反應。": "Scannez le QR code pour partager vos questions, vos réactions et votre compréhension.",
-  "How easy is this to follow?": "Comment trouvez-vous le rythme de la présentation ?",
-  "現在的理解難度如何？": "Comment trouvez-vous le rythme de la présentation ?",
-  "Too easy": "Trop facile", "太簡單": "Trop facile",
-  "Easy": "Facile", "容易": "Facile",
-  "Just right": "Adapté", "剛剛好": "Adapté",
-  "Hard": "Difficile", "有點難": "Difficile",
-  "Lost": "Je décroche", "跟丟了": "Je décroche",
+  "Scan the QR code to ask a question.": "Scannez le QR code pour poser vos questions.",
+  "掃描 QR Code 即可提問。": "Scannez le QR code pour poser vos questions.",
   "Ask anytime": "Posez vos questions", "隨時提問": "Posez vos questions",
   "What is unclear, worth following up on, or useful to discuss together?": "Qu’aimeriez-vous éclaircir ou approfondir ?",
   "寫下不清楚、想繼續追問，或值得一起討論的地方": "Qu’aimeriez-vous éclaircir ou approfondir ?",
@@ -181,8 +164,6 @@ export function frenchDefaults(config) {
   translated.description = value(translated.description);
   const defaultTitles = [`${translated.title} · Live call-in`, `${translated.title}・現場叩應`, `${translated.title} · Réactions en direct`];
   if (defaultTitles.includes(translated.dashboardTitle)) translated.dashboardTitle = `${translated.title} · Questions en direct`;
-  translated.difficulty.title = value(translated.difficulty.title);
-  translated.difficulty.labels = translated.difficulty.labels.map(value);
   translated.question.title = value(translated.question.title);
   translated.question.placeholder = value(translated.question.placeholder);
   translated.question.lenses = translated.question.lenses.map((lens) => ({ ...lens, label: value(lens.label), description: value(lens.description) }));

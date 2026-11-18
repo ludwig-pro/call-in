@@ -4,13 +4,20 @@ import type { PublicEventConfig, QuestionLens, ReactionKind } from "./types";
 const questionLenses = new Set<QuestionLens>(["clarify", "chorus", "bridge", "keeper"]);
 const reactionKinds = new Set<ReactionKind>(["applause", "insight", "resonate", "pause"]);
 
+const retiredDescriptions = new Map([
+  ["Scan the QR code to share the difficulty, ask a question, or send a reaction.", "Scan the QR code to ask a question."],
+  ["Scan the QR code to share your understanding, questions, and live reactions.", "Scan the QR code to ask a question."],
+  ["掃描 QR Code，回報理解程度、提出問題或送出即時反應。", "掃描 QR Code 即可提問。"],
+  ["Scannez le QR code pour partager vos questions, vos réactions et votre compréhension.", "Scannez le QR code pour poser vos questions."],
+]);
+
 export const EVENT_CONFIG = validateEventConfig(rawConfig);
 export const QUESTION_LENSES = questionLenses;
 export const REACTION_KINDS = reactionKinds;
 
 export function validateEventConfig(value: unknown): PublicEventConfig {
   if (!isRecord(value)) throw new Error("public/event.config.json must contain an object");
-  const config = value as PublicEventConfig;
+  const { difficulty: _legacyDifficulty, ...config } = value as PublicEventConfig & { difficulty?: unknown };
   if (!isSlug(config.eventId)) throw new Error("eventId must be a lowercase URL-safe slug");
   assertText(config.eyebrow, "eyebrow", 80);
   assertText(config.title, "title", 160);
@@ -40,11 +47,6 @@ export function validateEventConfig(value: unknown): PublicEventConfig {
     for (const option of poll.options) assertText(option, `poll ${poll.id} option`, 120);
     pollIds.add(poll.id);
   }
-  if (!isRecord(config.difficulty) || config.difficulty.labels?.length !== 5) {
-    throw new Error("difficulty.labels must contain exactly 5 labels");
-  }
-  assertText(config.difficulty.title, "difficulty.title", 160);
-  for (const label of config.difficulty.labels) assertText(label, "difficulty label", 60);
   if (!Array.isArray(config.question?.lenses) || config.question.lenses.length !== 4) {
     throw new Error("question.lenses must contain the four supported lenses");
   }
@@ -152,7 +154,8 @@ export function validateEventConfig(value: unknown): PublicEventConfig {
     assertText(coc.summary, "moderation.codeOfConduct.summary", 600);
     for (const rule of coc.rules) assertText(rule, "moderation.codeOfConduct rule", 280);
   }
-  return config;
+  const description = retiredDescriptions.get(config.description);
+  return description ? { ...config, description } : config;
 }
 
 function assertText(value: unknown, field: string, maxLength: number): asserts value is string {

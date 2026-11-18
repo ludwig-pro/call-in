@@ -1,6 +1,6 @@
 ---
 name: call-in
-description: Add Call-in realtime audience response to an existing slide deck and close the loop after an event. Use for hosted PDF or web decks, live difficulty feedback, audience questions, emoji reactions, quick polls, QR entry, optional Cloudflare Workers self-hosting, prompt-driven deck integration, or an Uncommon Ground question-pool receipt.
+description: Add Call-in realtime audience response to an existing slide deck and close the loop after an event. Use for hosted PDF or web decks, audience questions, emoji reactions, quick polls, QR entry, optional Cloudflare Workers self-hosting, prompt-driven deck integration, or an Uncommon Ground question-pool receipt.
 ---
 
 # Call-in
@@ -20,7 +20,7 @@ Read both files before making changes
 2. Prefer the hosted `https://call-in.mashbean.net/new/` flow. Enter the event title, upload a PDF up to 20MB or paste a deck URL, create the event, and preserve the returned private setup and moderation links without printing their fragments in logs or chat.
 3. Open the private setup link when event copy, reactions, or polls need editing. Keep the generated `eventId` stable.
 4. Use the hosted presenter view when the speaker wants no source edits. If the deck host blocks iframe embedding, use **Open deck separately** or move to the deeper HTML integration path.
-5. Test the creator, presenter view, audience page, dashboard, moderator page, QR code, event isolation, capability separation, presentation delay, moderation, difficulty updates, polls, reactions, collapse control, and reconnect behavior.
+5. Test the creator, presenter view, audience page, dashboard, moderator page, QR code, event isolation, capability separation, presentation delay, moderation, polls, reactions, collapse control, and reconnect behavior.
 6. Test at 390 px, 1024 px, and a desktop presentation viewport. Respect `prefers-reduced-motion`.
 7. Report the public presenter and audience URLs, but identify the private setup and moderation links without exposing their access fragments.
 8. Use self-hosting only when the user explicitly needs their own infrastructure, longer retention, custom policies, or source integration. Work in a standalone checkout, run `npm install`, `npm run types`, `npm run doctor`, and `npm run check`, then use Deploy to Cloudflare or Wrangler. Do not nest the service repository inside the deck repository.

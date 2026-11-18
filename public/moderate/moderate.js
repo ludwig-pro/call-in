@@ -146,7 +146,7 @@ function questionCard(question) {
     <div class="moderator-card-head"><b>${status}</b><time>${formatTime(question.createdAt)}</time></div>
     ${question.flagCount ? `<div class="flag-summary"><b>${question.flagCount} ${t("reports", "次檢舉")}</b><span>${question.flagWeight} / ${question.flagThreshold} ${t("weighted threshold", "加權門檻")}</span><small>${escapeHtml(flagReasons)}</small></div>` : ""}
     <p>${escapeHtml(question.text)}</p>
-    <div class="moderator-meta"><span>${escapeHtml(question.nickname)}</span>${question.lens !== null && question.difficulty !== null ? `<span>${question.difficulty} · ${escapeHtml(lensLabels[question.lens] || question.lens)}</span>` : ""}</div>
+    <div class="moderator-meta"><span>${escapeHtml(question.nickname)}</span>${question.lens !== null ? `<span>${escapeHtml(lensLabels[question.lens] || question.lens)}</span>` : ""}</div>
     <label>${t("Reason", "理由")}
       <select>
         <option value="disruption" ${selectedReason === "disruption" ? "selected" : ""}>${t("Flooding or deliberate disruption", "洗版或蓄意干擾")}</option>
