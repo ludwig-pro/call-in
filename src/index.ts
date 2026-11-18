@@ -75,7 +75,29 @@ export default {
         const stub = env.LIVE_SESSION.getByName(`hosted:${hostedPage.eventId}`);
         if (!(await stub.isHostedEvent())) return noStore(new Response("Événement introuvable ou expiré.", { status: 404 }));
         const assetUrl = new URL(hostedPage.assetPath, url.origin);
-        return env.ASSETS.fetch(new Request(assetUrl, request));
+        if (hostedPage.assetPath !== "/audience/" || request.method !== "GET") {
+          return env.ASSETS.fetch(new Request(assetUrl, request));
+        }
+        // The asset's ETag describes the shared template, not this event's title.
+        const pageRequest = new Request(assetUrl, request);
+        pageRequest.headers.delete("If-None-Match");
+        pageRequest.headers.delete("If-Modified-Since");
+        const [asset, config] = await Promise.all([env.ASSETS.fetch(pageRequest), stub.eventConfig()]);
+        if (asset.status !== 200) return asset;
+        const title = `${config.title} · Call-in BordeauxJS`;
+        const canonical = `${url.origin}/e/${hostedPage.eventId}/`;
+        const page = new HTMLRewriter()
+          .on("title", { element(el) { el.setInnerContent(title); } })
+          .on('meta[property="og:title"], meta[name="twitter:title"]', {
+            element(el) { el.setAttribute("content", title.replaceAll("&", "&amp;")); },
+          })
+          .on("head", { element(el) {
+            el.append(`<meta property="og:url" content="${canonical}"><link rel="canonical" href="${canonical}">`, { html: true });
+          } })
+          .transform(asset);
+        page.headers.delete("ETag");
+        page.headers.delete("Last-Modified");
+        return noStore(page);
       }
 
       if (url.pathname === "/api/creation-settings" && request.method === "GET") {
