@@ -11,6 +11,11 @@ const questionsRoot = document.querySelector("[data-questions]");
 const listError = document.querySelector("[data-list-error]");
 const retryButton = document.querySelector("[data-retry]");
 const connection = document.querySelector("[data-connection]");
+const listLink = document.querySelector("[data-show-list]");
+const formLink = document.querySelector("[data-show-form]");
+const wideLayout = window.matchMedia("(min-width: 800px)");
+const eventTitle = document.querySelector("[data-event-title]");
+const eventHeading = eventTitle.parentElement;
 
 const state = {
   view: location.hash === "#questions" ? "list" : "form",
@@ -39,13 +44,14 @@ for (const [field, error] of [
   field.addEventListener("input", () => field.setCustomValidity(""));
 }
 
-for (const [selector, view] of [["[data-show-list]", "list"], ["[data-show-form]", "form"]]) {
-  document.querySelector(selector).addEventListener("click", (event) => {
+for (const [link, view] of [[listLink, "list"], [formLink, "form"]]) {
+  link.addEventListener("click", (event) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     navigate(view);
   });
 }
+wideLayout.addEventListener("change", renderViews);
 window.addEventListener("popstate", () => showView(location.hash === "#questions" ? "list" : "form", true));
 
 form.addEventListener("submit", async (event) => {
@@ -94,13 +100,17 @@ window.addEventListener("storage", (event) => {
   }
 });
 
+if (window.ResizeObserver) new window.ResizeObserver(fitEventTitle).observe(eventHeading);
+void document.fonts?.ready.then(fitEventTitle);
 render();
 try {
   const response = await fetch(eventApi("/config"), { cache: "no-store" });
   if (!response.ok) throw new Error("config unavailable");
   const config = await response.json();
   document.title = `${config.title} · Questions du public`;
-  document.querySelector("[data-event-title]").textContent = config.title;
+  eventTitle.textContent = config.title;
+  eventHeading.title = config.title;
+  fitEventTitle();
   state.voterKey = `${config.eventId}:live-deck-voter`;
   const initializeVoter = () => {
     const voterId = localStorage.getItem(state.voterKey) || crypto.randomUUID();
@@ -138,9 +148,28 @@ function setNotice(text, isError = false) {
   state.noticeIsError = isError;
 }
 
+function fitEventTitle() {
+  eventHeading.style.removeProperty("font-size");
+  const availableWidth = eventHeading.clientWidth;
+  const titleWidth = eventTitle.getBoundingClientRect().width;
+  if (!availableWidth || titleWidth <= availableWidth) return;
+
+  const preferredSize = parseFloat(window.getComputedStyle(eventHeading).fontSize);
+  const minimumSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) * .75;
+  eventHeading.style.fontSize = `${Math.max(minimumSize, preferredSize * (availableWidth - 1) / titleWidth)}px`;
+}
+
+function renderViews() {
+  const showingList = state.view === "list";
+  formView.hidden = !wideLayout.matches && showingList;
+  listView.hidden = !wideLayout.matches && !showingList;
+  listLink.removeAttribute("aria-current");
+  formLink.removeAttribute("aria-current");
+  (showingList ? listLink : formLink).setAttribute("aria-current", "true");
+}
+
 function render() {
-  formView.hidden = state.view !== "form";
-  listView.hidden = state.view !== "list";
+  renderViews();
   submitButton.disabled = !state.configReady || state.operations.submit;
   message.textContent = state.notice;
   message.classList.toggle("error", state.noticeIsError);
@@ -191,7 +220,7 @@ function renderQuestions() {
     cards.push(empty);
   }
   questionsRoot.replaceChildren(...cards);
-  if (focusedId && state.view === "list") {
+  if (focusedId && !listView.hidden) {
     [...questionsRoot.querySelectorAll("button[data-question-id]")]
       .find((button) => button.dataset.questionId === focusedId)?.focus({ preventScroll: true });
   }
