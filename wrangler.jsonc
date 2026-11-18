@@ -9,7 +9,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/new", "/new/*", "/en/new", "/en/new/*"]
+    "run_worker_first": ["/api/*", "/present/pdf-viewer", "/present/pdf-viewer.html", "/new", "/new/*", "/en/new", "/en/new/*"]
   },
   "vars": {
     "ROOM_ID": "default",
@@ -17,6 +17,7 @@
     "ADMIN_TOKEN_SHA256": "",
     "MODERATOR_TOKEN_SHA256": ""
   },
+  "ratelimits": [{ "name": "CREATE_ATTEMPTS", "namespace_id": "1832465910", "simple": { "limit": 4, "period": 60 } }],
   "durable_objects": {
     "bindings": [
       {
@@ -53,6 +54,7 @@
         "ADMIN_TOKEN_SHA256": "",
         "MODERATOR_TOKEN_SHA256": ""
       },
+      "ratelimits": [{ "name": "CREATE_ATTEMPTS", "namespace_id": "1832465910", "simple": { "limit": 4, "period": 60 } }],
       "durable_objects": {
         "bindings": [
           {

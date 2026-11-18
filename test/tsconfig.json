@@ -4,5 +4,5 @@
     "moduleResolution": "Bundler",
     "types": ["@cloudflare/vitest-pool-workers/types", "vitest/globals"]
   },
-  "include": ["./**/*.ts", "../worker-configuration.d.ts"]
+  "include": ["./**/*.ts", "../worker-configuration.d.ts", "../src/runtime-env.d.ts"]
 }

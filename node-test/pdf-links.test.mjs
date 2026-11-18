@@ -49,8 +49,9 @@ test("clears stale links before rendering and swallows the click a swipe produce
   assert.match(viewer, /suppressLinkClick = true/);
 });
 
-test("lets only the same-origin PDF viewer escape the deck sandbox for popups", () => {
-  assert.match(presenter, /if \(hostedPdf\) deckFrame\.sandbox\.add\("allow-popups-to-escape-sandbox"\)/);
-  assert.doesNotMatch(presenterHtml, /allow-popups-to-escape-sandbox/);
-  assert.match(presenterHtml, /sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"/);
+test("isolates the viewer and limits external navigation to PDF link clicks", () => {
+  assert.match(presenter, /if \(hostedPdf\) \{\s*deckFrame\.sandbox\.add\("allow-popups", "allow-popups-to-escape-sandbox"\)/);
+  assert.match(presenterHtml, /sandbox="allow-scripts"/);
+  assert.match(viewer, /window.origin !== "null"/);
+  assert.doesNotMatch(presenter, /location.search/);
 });

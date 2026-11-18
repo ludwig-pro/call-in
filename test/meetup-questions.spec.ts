@@ -3,9 +3,10 @@ import { describe, expect, it } from "vitest";
 
 const headers = { "Content-Type": "application/json" };
 
+let organizer = 0;
 async function createEvent() {
   const response = await SELF.fetch("https://example.com/api/events", {
-    method: "POST", headers,
+    method: "POST", headers: { ...headers, "CF-Connecting-IP": `192.0.2.${++organizer}` },
     body: JSON.stringify({ title: "Meetup", deckUrl: "https://example.com/slides", locale: "fr" }),
   });
   expect(response.status).toBe(201);

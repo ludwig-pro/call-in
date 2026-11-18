@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 
 const origin = "https://example.com";
 const json = { "Content-Type": "application/json" };
-const pdf = "%PDF-1.7\nTest de suppression";
+const pdf = "%PDF-1.7\nTest de suppression\n%%EOF\n";
 
 async function createEvent(title: string, upload = false) {
   const form = new FormData();
@@ -36,11 +36,12 @@ it("lets only the event administrator remove its PDF, questions, votes and acces
   await stub.moderateQuestion(submission.id, "restore", "other");
   await stub.upvote(submission.id, crypto.randomUUID(), true);
 
-  for (const headers of [undefined,
+  const unauthorized: (HeadersInit | undefined)[] = [undefined,
     { Authorization: `Bearer ${access(event.moderatorUrl)}` },
     { Authorization: `Bearer ${access(other.setupUrl)}` },
     { Cookie: `call_in_moderator=${access(event.moderatorUrl)}` },
-  ]) {
+  ];
+  for (const headers of unauthorized) {
     expect((await deletion(headers)).status).toBe(404);
   }
   expect((await SELF.fetch(base + "/admin/event", { method: "GET", headers: admin })).status).toBe(405);

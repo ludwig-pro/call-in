@@ -35,6 +35,31 @@ export async function readSmallJsonRequest(
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 
+export async function readBoundedFormData(request: Request, maxBytes: number): Promise<FormData> {
+  if (!request.body) throw new Error("invalid multipart request");
+  const reader = request.body.getReader();
+  let length = 0;
+  const bounded = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      const chunk = await reader.read();
+      if (chunk.done) return controller.close();
+      length += chunk.value.byteLength;
+      if (length > maxBytes) {
+        controller.error(new Error("request too large"));
+        await reader.cancel();
+        return;
+      }
+      controller.enqueue(chunk.value);
+    },
+    cancel(reason) { return reader.cancel(reason); },
+  });
+  try {
+    return await new Response(bounded, { headers: { "Content-Type": request.headers.get("Content-Type") || "" } }).formData();
+  } catch {
+    throw new Error(length > maxBytes ? "request too large" : "invalid multipart request");
+  }
+}
+
 export function cleanText(value: string, max: number): string {
   return value
     .replace(/[\u0000-\u001F\u007F]/g, " ")

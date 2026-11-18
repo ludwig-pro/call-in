@@ -1,3 +1,4 @@
+import { creationHeaders } from "./creation-check.js";
 import { wireEventDeletion } from "../delete-event.js";
 
 const form = document.querySelector("[data-create-form]");
@@ -66,7 +67,12 @@ form.addEventListener("submit", async (event) => {
   button.disabled = true;
   message.textContent = t(sourceMode === "upload" ? "Uploading your PDF and creating the event…" : "Creating your event…", sourceMode === "upload" ? "正在上傳 PDF 並建立叩應…" : "正在建立叩應…", sourceMode === "upload" ? "Import du PDF et création de l’événement…" : "Création de l’événement…");
   try {
-    const response = await fetch("/api/events", { method: "POST", body: data });
+    const progress = message.textContent;
+    const headers = await creationHeaders(form, () => {
+      message.textContent = t("Verifying…", "正在驗證…", "Vérification anti-robot en cours…");
+    });
+    message.textContent = progress;
+    const response = await fetch("/api/events", { method: "POST", headers, body: data });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(result.error || t("The event was not created", "叩應沒有建立成功", "L’événement n’a pas été créé"));
     showReceipt(result);
@@ -170,14 +176,15 @@ function normalizeDeckUrl(value) {
   if (!trimmed) return "";
   let parsed;
   try { parsed = new URL(trimmed); } catch { return trimmed; }
-  const slides = parsed.pathname.match(/^\/presentation\/d\/([^/]+)/);
-  if (parsed.hostname === "docs.google.com" && slides?.[1]) return `https://docs.google.com/presentation/d/${slides[1]}/embed?start=false&loop=false&delayms=3000`;
+  const slides = parsed.pathname.match(/^\/presentation\/d\/(e\/)?([A-Za-z0-9_-]+)(?:\/|$)/);
+  if (parsed.origin === "https://docs.google.com" && !parsed.username && !parsed.password && slides) return `https://docs.google.com/presentation/d/${slides[1] || ""}${slides[2]}/${slides[1] ? "pubembed" : "embed"}?start=false&loop=false&delayms=3000`;
   return parsed.toString();
 }
 function shortUrl(value) { return value.replace(/^https?:\/\//, "").replace(/\/$/, ""); }
 function formatBytes(value) { return value < 1024 * 1024 ? `${Math.ceil(value / 1024)} ${french ? "Ko" : "KB"}` : `${(value / 1024 / 1024).toFixed(1)} ${french ? "Mo" : "MB"}`; }
 function humanError(error) {
   const text = String(error?.message || error);
+  if (text.includes("verification")) return t("Verification failed. Please try again.", "驗證失敗，請再試一次。", "La vérification anti-robot a échoué. Réessayez dans un instant.");
   if (text.includes("20 MB") || text.includes("too large")) return t("The PDF must be 20MB or smaller.", "PDF 不能超過 20MB。", "Le PDF ne doit pas dépasser 20 Mo.");
   if (text.includes("valid PDF") || text.includes("must be a PDF")) return t("That file is not a valid PDF.", "這個檔案不是有效的 PDF。", "Ce fichier n’est pas un PDF valide.");
   if (text.includes("HTTPS")) return t("The deck URL must use https://", "簡報網址需要使用 https://", "L’adresse doit commencer par https://");

@@ -1,0 +1,25 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Content-Security-Policy: base-uri 'none'; object-src 'none'; script-src 'self' https://challenges.cloudflare.com; script-src-attr 'none'; form-action 'self'; worker-src 'self'
+
+/present/pdf-viewer.js
+  Access-Control-Allow-Origin: *
+
+/present/pdf-links.js
+  Access-Control-Allow-Origin: *
+
+/vendor/pdfjs/*
+  Access-Control-Allow-Origin: *
+
+/brand/archivo-latin.woff2
+  Access-Control-Allow-Origin: *
+
+/setup/*
+  Content-Security-Policy: frame-ancestors 'none'
+
+/moderate/*
+  Content-Security-Policy: frame-ancestors 'none'
+
+/present/
+  Content-Security-Policy: frame-src 'self' https://docs.google.com; frame-ancestors 'self'

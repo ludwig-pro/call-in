@@ -5,9 +5,7 @@ const config = localizeConfig(await fetch(eventApi("/config")).then((response) =
   if (!response.ok) throw new Error("config unavailable");
   return response.json();
 }));
-const params = new URLSearchParams(location.search);
-const requestedDeck = params.get("deck");
-const deckUrl = validDeckUrl(requestedDeck) ? requestedDeck : config.deckUrl;
+const deckUrl = validDeckUrl(config.deckUrl) ? config.deckUrl : "";
 const deckFrame = document.querySelector("[data-deck-frame]");
 const productHome = document.querySelector("[data-product-home]");
 const openDeck = document.querySelector("[data-open-deck]");
@@ -68,23 +66,32 @@ if (french) {
   document.querySelector("[data-dashboard-frame]").title = "Tableau de bord des questions";
   embedNote.textContent = "Si la présentation reste vide, son site interdit peut-être l’intégration. Utilisez « Ouvrir la présentation » ci-dessus.";
 }
-// The same-origin PDF viewer opens deck links in new tabs; without this flag the
-// sandboxed frame would trap those tabs in the sandbox. External decks keep the
-// strict sandbox from the HTML attribute.
-if (hostedPdf) deckFrame.sandbox.add("allow-popups-to-escape-sandbox");
 if (!noDeck) {
-  deckFrame.src = hostedPdf
-    ? `/present/pdf-viewer?file=${encodeURIComponent(deckUrl)}&lang=${french ? "fr" : english ? "en" : "zh"}`
-    : deckUrl;
-  openDeck.href = deckUrl;
+  const deck = new URL(deckUrl, location.origin);
+  openDeck.href = deck.href;
+  if (hostedPdf) {
+    deckFrame.sandbox.add("allow-popups", "allow-popups-to-escape-sandbox");
+    deckFrame.src = `/present/pdf-viewer?file=${encodeURIComponent(deckUrl)}&lang=${french ? "fr" : english ? "en" : "zh"}`;
+  } else {
+    openDeck.textContent = `${labels.open} · ${deck.host}`;
+    if (deck.origin === "https://docs.google.com" && /^\/presentation\/d\/(?:e\/)?[A-Za-z0-9_-]+\/(?:embed|pubembed)$/.test(deck.pathname)) {
+      deckFrame.src = new URL(deck.pathname, deck.origin).href;
+    } else {
+      deckFrame.hidden = true;
+      // Keep the reading wall available while the speaker opens an external deck.
+      document.body.classList.add("external-deck");
+      toggle.hidden = true;
+      status.textContent = french ? "Présentation externe" : english ? "External presentation" : "外部簡報";
+    }
+  }
 }
 syncToolbarPeekPosition();
 new ResizeObserver(syncToolbarPeekPosition).observe(dashboardPane);
 deckFrame.addEventListener("load", () => {
-  if (!noDeck) status.textContent = labels.loaded;
+  if (deckFrame.hasAttribute("src")) status.textContent = labels.loaded;
 });
 window.addEventListener("message", (event) => {
-  if (!hostedPdf || event.origin !== location.origin || event.source !== deckFrame.contentWindow) return;
+  if (!hostedPdf || event.origin !== "null" || event.source !== deckFrame.contentWindow) return;
   if (event.data?.type === "call-in:pdf-page") {
     status.textContent = labels.pdfPage(event.data.page, event.data.pages);
   }

@@ -91,13 +91,15 @@ void initialize();
 
 async function initialize() {
   try {
+    if (window.origin !== "null") throw new Error("PDF sandbox required");
+    await startPdfParser();
     const fileUrl = hostedPdfUrl(params.get("file"));
     pdf = await getDocument({ url: fileUrl.href, isEvalSupported: false }).promise;
     totalLabel.textContent = String(pdf.numPages);
-    controls.hidden = false;
     stage.focus({ preventScroll: true });
     await renderPage();
-    parent.postMessage({ type: "call-in:pdf-ready", pages: pdf.numPages }, location.origin);
+    controls.hidden = false;
+    if (parent !== window) parent.postMessage({ type: "call-in:pdf-ready", pages: pdf.numPages }, location.origin);
   } catch (error) {
     console.error("PDF viewer failed", error);
     canvasWrap.hidden = true;
@@ -105,6 +107,34 @@ async function initialize() {
     status.hidden = false;
     status.classList.add("is-error");
     status.textContent = labels.error;
+  }
+}
+
+async function startPdfParser() {
+  // An opaque document cannot start a worker at the application's origin.
+  const moduleUrl = new URL(GlobalWorkerOptions.workerSrc, location.href);
+  const bootstrap = `import ${JSON.stringify(moduleUrl.href)}; self.postMessage("parser-loaded");`;
+  let worker;
+  let timer;
+  try {
+    worker = new Worker(`data:text/javascript,${encodeURIComponent(bootstrap)}`, {
+      type: "module", credentials: "omit",
+    });
+    await new Promise((resolve, reject) => {
+      timer = setTimeout(reject, 10000);
+      worker.onerror = reject;
+      worker.onmessage = ({ data }) => { if (data === "parser-loaded") resolve(); };
+    });
+    worker.onmessage = null;
+    worker.onerror = null;
+    GlobalWorkerOptions.workerPort = worker;
+  } catch {
+    worker?.terminate();
+    // Some engines disallow module imports from an opaque worker. PDF.js also
+    // supports loading its parser in the already sandboxed viewer.
+    await import(moduleUrl.href);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -149,7 +179,7 @@ async function renderPage() {
   const pageLabel = labels.page(pageNumber, pdf.numPages);
   canvas.setAttribute("aria-label", pageLabel);
   await renderLinks(page, viewport, sequence);
-  parent.postMessage({ type: "call-in:pdf-page", page: pageNumber, pages: pdf.numPages }, location.origin);
+  if (parent !== window) parent.postMessage({ type: "call-in:pdf-page", page: pageNumber, pages: pdf.numPages }, location.origin);
 }
 
 const allowedLinkProtocols = ["http:", "https:", "mailto:"];

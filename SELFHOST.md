@@ -16,6 +16,14 @@ Le fichier local `wrangler.selfhost.jsonc` contient la configuration de l’inst
 
 `prepare-selfhost.mjs` produit `.selfhost-assets` à partir de `public` : il active le français et adapte les liens au domaine de l’instance. Ce dossier est généré et ignoré par Git. La police Archivo est servie par le Worker depuis `public/brand/`, avec sa licence.
 
+## Protection de la création publique
+
+Le binding Wrangler `CREATE_ATTEMPTS` limite chaque adresse IP à quatre tentatives de création par minute et par point de présence Cloudflare. Les plafonds globaux restent de six créations par minute, cent par jour et 400 Mio de PDF par jour. Les questions et les votes ont leurs propres limites.
+
+Pour activer Turnstile, créez un widget géré pour les hôtes autorisés à créer des événements. Enregistrez sa clé publique et sa clé secrète comme secrets du Worker, par exemple avec `npx wrangler secret bulk --config wrangler.selfhost.jsonc` et un objet JSON sur l’entrée standard contenant `TURNSTILE_SITE_KEY` et `TURNSTILE_SECRET_KEY`. Le formulaire charge le widget au moment de la création. Le Worker vérifie le jeton transmis dans l’en-tête `X-Turnstile-Token`, le nom d’hôte et l’action `create_event` avant de lire le corps. Réglez `TURNSTILE_REQUIRED` sur `"true"` dans les variables Wrangler de production, comme sur BordeauxJS. Si une clé manque, la création échoue. Pour un développement local sans widget, omettez les deux clés et laissez `TURNSTILE_REQUIRED` sur `"false"`.
+
+Les PDF importés sont limités à 20 Mio et contrôlés à leurs deux extrémités. Le lecteur utilise une origine opaque, y compris en accès direct. L’URL du fichier brut déclenche un téléchargement. Ces contrôles ne constituent pas une analyse antivirus. Seules les URL d’intégration Google Slides reconnues sont chargées automatiquement. Les autres liens nécessitent un clic sur le domaine affiché.
+
 ## Mettre à jour l’instance
 
 Dans la copie locale, `origin` désigne le fork et `upstream` le projet d’origine. Pour intégrer une nouvelle version du projet d’origine :
