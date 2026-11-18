@@ -9,6 +9,7 @@
     <link rel="icon" type="image/svg+xml" href="/brand/call-in-mark.svg" />
     <link rel="stylesheet" href="/brand/affiche.css" />
     <link rel="stylesheet" href="/fr/landing.css" />
+    <link rel="stylesheet" href="/brand/delete-event.css" />
     <title>Call-in · La parole au public</title>
   </head>
   <body>
@@ -109,7 +110,28 @@
             <article class="private-card"><span class="card-label">Lien privé</span><h3>Modifier l’événement</h3><p>Toute personne possédant ce lien peut modifier les paramètres.</p><a data-setup-link target="_blank" rel="noreferrer">Ouvrir les paramètres ↗</a><button type="button" data-copy="setup">Copier le lien privé</button></article>
             <article class="private-card"><span class="card-label">Lien privé</span><h3>Modérer les questions</h3><p>Partagez ce lien complet avec une personne qui vous aide à modérer.</p><a data-moderator-link target="_blank" rel="noreferrer">Ouvrir la modération ↗</a><button type="button" data-copy="moderator">Copier le lien de modération</button></article>
           </div>
-          <p class="expiry" data-expiry></p><a class="create-another" href="#create" data-create-another>Créer un autre événement ↗</a>
+          <p class="expiry" data-expiry></p>
+          <div class="receipt-actions">
+            <a class="create-another" href="#create" data-create-another>Créer un autre événement ↗</a>
+            <div class="event-delete" data-event-delete>
+              <button type="button" data-open-delete>Supprimer l’événement</button>
+              <dialog aria-labelledby="delete-event-title" aria-describedby="delete-event-details">
+                <h2 id="delete-event-title" data-delete-title>Supprimer l’événement ?</h2>
+                <p id="delete-event-details">Les questions, les pseudos, les votes et le PDF importé seront effacés. Les liens de l’événement ne fonctionneront plus. Cette action est définitive.</p>
+                <form>
+                  <p data-delete-message role="status"></p>
+                  <div class="event-delete-actions">
+                    <button type="button" data-cancel-delete autofocus>Annuler</button>
+                    <button type="submit">Supprimer définitivement</button>
+                  </div>
+                </form>
+              </dialog>
+            </div>
+          </div>
+        </section>
+        <section class="receipt-ready" data-deleted-event hidden>
+          <h2 tabindex="-1">Événement supprimé</h2>
+          <a class="create-another" href="#create">Créer un événement ↗</a>
         </section>
 
         <div class="demo-launch"><div><span class="card-label">Envie d’essayer ?</span><h3>Visitez la salle de démonstration.</h3><p>Les questions de la démo sont publiques et réinitialisées chaque jour. N’y saisissez pas d’informations confidentielles.</p></div><a href="/fr/demo/" target="_blank" rel="noreferrer">Ouvrir la démo <span aria-hidden="true">↗</span></a></div>

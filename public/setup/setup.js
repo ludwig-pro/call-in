@@ -1,5 +1,7 @@
 import { accessTokenKey, consumeAccessToken, eventContext, eventPage } from "../event-context.js";
 
+import { wireEventDeletion } from "../delete-event.js";
+
 const tokenKey = accessTokenKey("admin");
 const loginPanel = document.querySelector("[data-login-panel]");
 const loginForm = document.querySelector("[data-login-form]");
@@ -72,6 +74,24 @@ document.querySelector("[data-sign-out]").addEventListener("click", () => {
   sessionStorage.removeItem(tokenKey);
   location.reload();
 });
+
+if (eventContext.hosted) {
+  const deletePanel = app.querySelector("[data-event-delete]");
+  const deletedEvent = document.querySelector("[data-deleted-event]");
+  deletePanel.hidden = false;
+  wireEventDeletion(deletePanel, () => ({
+    title: config.title,
+    apiBase: eventContext.apiBase,
+    token,
+  }), () => {
+    token = "";
+    config = null;
+    sessionStorage.removeItem(tokenKey);
+    app.hidden = true;
+    deletedEvent.hidden = false;
+    deletedEvent.querySelector("h2").focus();
+  });
+}
 
 async function loadConfig() {
   if (!token) return;

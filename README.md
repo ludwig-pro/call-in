@@ -12,7 +12,7 @@ Call-in permet au public d’un meetup de poser des questions en direct et de so
 
 Conservez les liens de configuration et de modération obtenus à la création. Partagez le lien public ou le QR code avec les participants et le lien privé de modération avec l’équipe qui en a besoin.
 
-Les événements et leurs données, y compris les PDF importés, expirent après sept jours. La démo est publique et se réinitialise chaque jour.
+Le lien privé de configuration permet de supprimer l’événement et ses données à tout moment. Les événements expirent automatiquement après sept jours. La démo est publique et se réinitialise chaque jour.
 
 ## Développer en local
 

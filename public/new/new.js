@@ -1,7 +1,10 @@
+import { wireEventDeletion } from "../delete-event.js";
+
 const form = document.querySelector("[data-create-form]");
 const createPanel = document.querySelector("[data-create-panel]");
 const message = document.querySelector("[data-create-message]");
 const receipt = document.querySelector("[data-receipt]");
+const deletedEvent = document.querySelector("[data-deleted-event]");
 const fileInput = form.querySelector('input[name="deckFile"]');
 const urlInput = form.querySelector('input[name="deckUrl"]');
 const fileLabel = document.querySelector("[data-file-label]");
@@ -10,7 +13,8 @@ const dropZone = document.querySelector("[data-drop-zone]");
 const french = document.documentElement.lang.startsWith("fr");
 const english = document.documentElement.lang.startsWith("en");
 const t = (en, zh, fr) => french ? fr : english ? en : zh;
-const receiptLinks = {};
+let receiptLinks = {};
+let createdEvent;
 const copyDefault = new Map();
 const startTitle = document.querySelector(".start-card h3");
 const startDescription = document.querySelector(".start-card p");
@@ -90,19 +94,37 @@ document.querySelectorAll("[data-copy]").forEach((button) => {
 
 document.querySelectorAll('[data-create-another], [data-open-creator], a[href="#create"]').forEach((link) => {
   link.addEventListener("click", (event) => {
-    if (receipt.hidden) return;
+    if (receipt.hidden && (!deletedEvent || deletedEvent.hidden)) return;
     event.preventDefault();
     form.reset();
     fileLabel.textContent = fileLabelDefault;
     message.textContent = "";
     setSourceMode(initialSourceMode);
     receipt.hidden = true;
+    if (deletedEvent) deletedEvent.hidden = true;
     createPanel.hidden = false;
     if (location.hash !== "#create") history.pushState(null, "", "#create");
     createPanel.scrollIntoView({ behavior: "smooth", block: "start" });
     form.querySelector('input[name="title"]')?.focus({ preventScroll: true });
   });
 });
+
+const deletePanel = receipt.querySelector("[data-event-delete]");
+if (deletePanel) {
+  wireEventDeletion(deletePanel, () => ({
+    title: createdEvent.title,
+    apiBase: `/api/events/${createdEvent.eventId}`,
+    token: new URLSearchParams(new URL(receiptLinks.setup).hash.slice(1)).get("access"),
+  }), () => {
+    receiptLinks = {};
+    createdEvent = null;
+    receipt.querySelectorAll("a[target]").forEach((link) => link.removeAttribute("href"));
+    receipt.querySelector("[data-audience-qr]").removeAttribute("src");
+    receipt.hidden = true;
+    deletedEvent.hidden = false;
+    deletedEvent.querySelector("h2").focus();
+  });
+}
 
 function setSourceMode(mode) {
   sourceMode = mode === "url" || mode === "none" ? mode : "upload";
@@ -118,6 +140,7 @@ function updateFileLabel(file) {
 }
 
 function showReceipt(result) {
+  createdEvent = { eventId: result.eventId, title: result.title };
   receiptLinks.audience = result.audienceUrl;
   receiptLinks.setup = result.setupUrl;
   receiptLinks.moderator = result.moderatorUrl;
