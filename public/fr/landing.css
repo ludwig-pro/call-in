@@ -185,3 +185,6 @@ button { cursor: pointer; }
   .header-create-short { display: inline; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+.receipt-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+.receipt-actions .create-another { margin-top: 0; }

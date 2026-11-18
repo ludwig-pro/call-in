@@ -206,7 +206,11 @@ function connect() {
       // ping/pong and malformed messages do not require a moderator refresh.
     }
   });
-  socket.addEventListener("close", () => {
+  socket.addEventListener("close", (event) => {
+    if (event.code === 4004) {
+      location.reload();
+      return;
+    }
     statusEl.textContent = t("Reconnecting", "重新連線中");
     setTimeout(connect, 1500);
   });

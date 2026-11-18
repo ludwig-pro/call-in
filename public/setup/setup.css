@@ -188,3 +188,5 @@
   .setup-header-actions { gap: 8px; }
   .setup-intro h1 { font-size: 38px; }
 }
+
+.setup-page .event-delete { margin-top: 2rem; }

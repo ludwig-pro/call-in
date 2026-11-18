@@ -277,7 +277,11 @@ function connect() {
       // The server also accepts ping/pong; ignore messages that are not snapshots.
     }
   });
-  socket.addEventListener("close", () => {
+  socket.addEventListener("close", (event) => {
+    if (event.code === 4004) {
+      location.reload();
+      return;
+    }
     if (state.socket !== socket) return;
     state.socket = null;
     state.connected = false;

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/style.css" />
     <link rel="stylesheet" href="/brand/affiche.css" />
     <link rel="stylesheet" href="/setup/setup.css" />
+    <link rel="stylesheet" href="/brand/delete-event.css" />
     <script src="/brand/theme.js"></script>
   </head>
   <body class="setup-page">
@@ -125,7 +126,25 @@
             <button class="primary" type="submit">Enregistrer les paramètres</button>
           </div>
         </form>
+        <div class="event-delete" data-event-delete hidden>
+          <button type="button" data-open-delete>Supprimer l’événement</button>
+          <dialog aria-labelledby="delete-event-title" aria-describedby="delete-event-details">
+            <h2 id="delete-event-title" data-delete-title>Supprimer l’événement ?</h2>
+            <p id="delete-event-details">Les questions, les pseudos, les votes et le PDF importé seront effacés. Les liens de l’événement ne fonctionneront plus. Cette action est définitive.</p>
+            <form>
+              <p data-delete-message role="status"></p>
+              <div class="event-delete-actions">
+                <button type="button" data-cancel-delete autofocus>Annuler</button>
+                <button type="submit">Supprimer définitivement</button>
+              </div>
+            </form>
+          </dialog>
+        </div>
       </div>
+      <section class="setup-result" data-deleted-event hidden>
+        <div><h2 tabindex="-1">Événement supprimé</h2></div>
+        <div class="setup-result-links"><a href="/#create">Créer un événement ↗</a></div>
+      </section>
     </main>
     <script type="module" src="/setup/setup.js"></script>
   </body>

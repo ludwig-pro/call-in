@@ -1,0 +1,45 @@
+.event-delete button[data-open-delete] {
+  min-height: 44px;
+  padding: .6rem .9rem;
+  border: 2px solid var(--danger);
+  background: var(--paper);
+  color: var(--danger);
+  font-weight: 800;
+  cursor: pointer;
+}
+.event-delete dialog {
+  width: min(34rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  overflow: auto;
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 3px solid var(--ink);
+  background: var(--surface);
+  color: var(--ink);
+}
+.event-delete dialog::backdrop { background: #111a; }
+.event-delete dialog h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 4vw, 1.85rem);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+.event-delete dialog p { margin: .8rem 0; }
+.event-delete [data-delete-message] { color: var(--danger); font-weight: 700; }
+.event-delete [data-delete-message]:empty { display: none; }
+.event-delete-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .65rem; margin-top: 1.25rem; }
+.event-delete dialog button {
+  min-height: 44px;
+  padding: .55rem .8rem;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font: 800 .9rem/1.25 var(--font);
+  cursor: pointer;
+}
+.event-delete dialog button[type="submit"] {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+:root[data-theme="dark"] .event-delete dialog button[type="submit"] { color: #111; }
+.event-delete dialog button:disabled { cursor: wait; opacity: .65; }

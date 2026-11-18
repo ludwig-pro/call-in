@@ -81,7 +81,11 @@ function connect() {
     if (message.type === "snapshot") render(message.data);
     if (message.type === "reaction") showReaction(message.data);
   });
-  socket.addEventListener("close", () => {
+  socket.addEventListener("close", (event) => {
+    if (event.code === 4004) {
+      location.reload();
+      return;
+    }
     setStatus(false);
     setTimeout(connect, 1500);
   });

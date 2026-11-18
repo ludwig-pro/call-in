@@ -109,6 +109,7 @@ type ExportData = {
 };
 
 export class LiveSession extends DurableObject<Env> {
+  private hostedEventDeleted: boolean;
   private snapshotCache: SessionSnapshot | null = null;
   private eventConfigCache: PublicEventConfig | null = null;
   private readonly reactionWindows = new Map<string, number[]>();
@@ -116,6 +117,7 @@ export class LiveSession extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.initializeSchema();
+    this.hostedEventDeleted = ctx.storage.kv.get<boolean>("hostedEventDeleted") === true;
   }
 
   private initializeSchema(): void {
@@ -406,12 +408,22 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   async deleteHostedEvent(): Promise<void> {
-    for (const socket of this.ctx.getWebSockets()) socket.close(1001, "event deleted");
-    this.clearHostedEventData();
+    this.ctx.storage.transactionSync(() => {
+      this.clearHostedEventData();
+      this.ctx.storage.kv.put("hostedEventDeleted", true);
+    });
+    this.hostedEventDeleted = true;
+    for (const socket of this.ctx.getWebSockets()) socket.close(4004, "event unavailable");
     await this.ctx.storage.deleteAlarm();
   }
 
+  private assertEventAvailable(): void {
+    // A request admitted by the Worker before deletion can still arrive at this object afterwards.
+    if (this.hostedEventDeleted) throw new Error("event not found");
+  }
+
   async updateEventConfig(value: unknown): Promise<{ config: PublicEventConfig; updatedAt: number }> {
+    this.assertEventAvailable();
     const config = validateEventConfig(value);
     const expectedEventId = this.getHostedEvent()?.event_id ?? EVENT_CONFIG.eventId;
     if (config.eventId !== expectedEventId) {
@@ -556,6 +568,7 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   async snapshot(): Promise<SessionSnapshot> {
+    this.assertEventAvailable();
     if (this.snapshotCache) return this.snapshotCache;
 
     const config = this.getEventConfig();
@@ -688,6 +701,7 @@ export class LiveSession extends DurableObject<Env> {
     }
     assertVoterId(voterId);
     const snapshot = await this.snapshot();
+    this.assertEventAvailable();
     const previous = this.ctx.storage.sql
       .exec<{ option_index: number }>(
         "SELECT option_index FROM votes WHERE poll_id = ? AND voter_id = ?",
@@ -968,6 +982,7 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   async react(kind: ReactionKind, voterId: string): Promise<{ ok: true }> {
+    this.assertEventAvailable();
     assertVoterId(voterId);
     if (!REACTION_KINDS.has(kind)) throw new Error("invalid reaction");
     const now = Date.now();
@@ -1086,6 +1101,7 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   async setSessionMode(mode: SessionMode): Promise<ModeratorSnapshot> {
+    this.assertEventAvailable();
     if (!["open", "slow", "approval", "paused", "closed"].includes(mode)) {
       throw new Error("invalid session mode");
     }
@@ -1102,6 +1118,7 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   async reset(): Promise<SessionSnapshot> {
+    this.assertEventAvailable();
     this.ctx.storage.sql.exec("DELETE FROM moderation_actions");
     this.ctx.storage.sql.exec("DELETE FROM question_flags");
     this.ctx.storage.sql.exec("DELETE FROM question_votes");
@@ -1167,6 +1184,7 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   async alarm(): Promise<void> {
+    if (this.hostedEventDeleted) return;
     const now = Date.now();
     const demoResetAt = await this.ctx.storage.get<number>("demoResetAt");
     if (demoResetAt && demoResetAt <= now) {
@@ -1179,9 +1197,7 @@ export class LiveSession extends DurableObject<Env> {
     }
     const hosted = this.getHostedEvent();
     if (hosted && hosted.expires_at <= now) {
-      for (const socket of this.ctx.getWebSockets()) socket.close(1001, "event expired");
-      this.clearHostedEventData();
-      await this.ctx.storage.deleteAlarm();
+      await this.deleteHostedEvent();
       return;
     }
     this.ctx.storage.sql.exec(
@@ -1196,6 +1212,7 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   async fetch(request: Request): Promise<Response> {
+    if (this.hostedEventDeleted) return new Response("Event not found", { status: 404 });
     const url = new URL(request.url);
     if (url.pathname === "/deck") {
       if (!this.isHostedEvent()) return new Response("Event not found", { status: 404 });
@@ -1228,6 +1245,7 @@ export class LiveSession extends DurableObject<Env> {
   }
 
   private getEventConfig(): PublicEventConfig {
+    this.assertEventAvailable();
     if (this.eventConfigCache) return this.eventConfigCache;
     const row = this.ctx.storage.sql
       .exec<{ config_json: string }>("SELECT config_json FROM event_config WHERE id = 1")
@@ -1258,6 +1276,7 @@ export class LiveSession extends DurableObject<Env> {
     if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-") {
       return new Response("File is not a valid PDF", { status: 415 });
     }
+    if (!this.isHostedEvent()) return new Response("Event not found", { status: 404 });
     const filename = cleanHostedFilename(url.searchParams.get("filename") || "slides.pdf");
     this.ctx.storage.transactionSync(() => {
       this.ctx.storage.sql.exec("DELETE FROM hosted_deck_chunks");
@@ -1439,6 +1458,7 @@ export class LiveSession extends DurableObject<Env> {
       .toArray()[0];
     const expiry = this.getHostedEvent()?.expires_at;
     const demoResetAt = await this.ctx.storage.get<number>("demoResetAt");
+    if (this.hostedEventDeleted) return;
     const timestamps = [next?.publish_at, expiry, demoResetAt].filter(
       (value): value is number => typeof value === "number" && value > Date.now(),
     );

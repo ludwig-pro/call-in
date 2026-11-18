@@ -48,7 +48,7 @@ export default {
           return env.ASSETS.fetch(new Request(new URL(demoAsset, url.origin), request));
         }
         const stub = env.LIVE_SESSION.getByName(`hosted:${hostedPage.eventId}`);
-        if (!(await stub.isHostedEvent())) return new Response("Event not found", { status: 404 });
+        if (!(await stub.isHostedEvent())) return noStore(new Response("Événement introuvable ou expiré.", { status: 404 }));
         const assetUrl = new URL(hostedPage.assetPath, url.origin);
         return env.ASSETS.fetch(new Request(assetUrl, request));
       }
@@ -89,11 +89,13 @@ export default {
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown error";
       const status =
-        message.includes("limit") || message.includes("cooldown")
-          ? 429
-          : message.includes("too large")
-            ? 413
-            : 400;
+        message === "event not found"
+          ? 404
+          : message.includes("limit") || message.includes("cooldown")
+            ? 429
+            : message.includes("too large")
+              ? 413
+              : 400;
       console.error(
         JSON.stringify({ message: "request failed", requestId, path: url.pathname, error: message }),
       );
@@ -267,6 +269,17 @@ async function handleSessionApi(
   if (path === "/admin/export" && request.method === "GET") {
     if (!(await isRoleAuthorized(request, env, context, "admin"))) return jsonError("not found", 404);
     return noStore(Response.json(await stub.exportData()));
+  }
+  if (path === "/admin/event") {
+    if (!hostedEventId || !(await isRoleAuthorized(request, env, context, "admin"))) {
+      return withCors(jsonError("not found", 404), request, env);
+    }
+    if (request.method !== "DELETE") return withCors(jsonError("method not allowed", 405), request, env);
+    await stub.deleteHostedEvent();
+    return withCors(new Response(null, {
+      status: 204,
+      headers: { "Set-Cookie": moderatorAccessCookie(hostedEventId, "", 0) },
+    }), request, env);
   }
   if (path === "/admin/reset" && request.method === "POST") {
     if (!(await isRoleAuthorized(request, env, context, "admin"))) return jsonError("not found", 404);
@@ -763,7 +776,7 @@ function withCors(response: Response, request: Request, env: Env): Response {
   const headers = new Headers(secured.headers);
   if (allowed && origin) headers.set("Access-Control-Allow-Origin", origin);
   headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  headers.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   headers.set("Vary", "Origin");
   return new Response(secured.body, {
     status: secured.status,
