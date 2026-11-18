@@ -8,7 +8,6 @@ The private setup link returned by the hosted `/new/` flow is the primary config
 - `eyebrow`, `title`, `description`, and `dashboardTitle` control public copy.
 - `deckUrl` is the return link from the audience page.
 - `theme` maps the event palette to CSS variables.
-- `difficulty.labels` must contain exactly five labels ordered from easiest to hardest.
 - `question.maxPerDevice` accepts 1 to 100. The default is 20.
 - `question.lenses` uses the four supported ids `clarify`, `chorus`, `bridge`, and `keeper`. Labels and descriptions are editable.
 - `reactions` uses the four supported ids `applause`, `insight`, `resonate`, and `pause`. Emoji and labels are editable.

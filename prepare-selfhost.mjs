@@ -61,11 +61,8 @@ for (const file of ["audience/index.html", "dashboard/index.html", "moderate/ind
     );
   });
   html = html.replaceAll(">Live audience<", ">Événement<")
-    .replaceAll(">Share the difficulty, ask a question, or send a live reaction.<", ">Partagez vos questions et vos réactions.<")
-    .replaceAll(">How difficult does this feel right now?<", ">Comment trouvez-vous le rythme ?<")
     .replaceAll(">Ask anytime<", ">Posez vos questions<")
     .replaceAll(">OPEN<", ">OUVERT<")
-    .replaceAll(">OK<", ">Adapté<")
     .replaceAll("<title>Call-in 簡單叩應</title>", "<title>Call-in</title>")
     .replaceAll("<title>Call-in Dashboard</title>", "<title>Tableau de bord Call-in</title>")
     .replaceAll("<title>Call-in moderation</title>", "<title>Modération Call-in</title>");

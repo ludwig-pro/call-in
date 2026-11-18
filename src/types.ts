@@ -23,22 +23,14 @@ export type AudienceQuestion = {
   text: string;
   nickname: string;
   lens: QuestionLens | null;
-  difficulty: number | null;
   createdAt: number;
   upvotes: number;
-};
-
-export type DifficultySnapshot = {
-  counts: number[];
-  total: number;
-  average: number | null;
 };
 
 export type SessionSnapshot = {
   updatedAt: number;
   session: { mode: SessionMode };
   polls: PollResult[];
-  difficulty: DifficultySnapshot;
   questions: AudienceQuestion[];
 };
 
@@ -102,7 +94,6 @@ export type PublicEventConfig = {
   deckUrl: string;
   locale: string;
   theme: Record<string, string>;
-  difficulty: { title: string; labels: string[] };
   question: {
     title: string;
     placeholder: string;

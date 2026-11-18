@@ -2,7 +2,7 @@
 
 > Call-in is an open-source live audience response layer for existing slide decks.
 
-Call-in lets a speaker upload a PDF up to 20 MB or paste a public deck URL. It creates a presenter view, an audience QR code, and a private moderation link without requiring an account. Audience members can report understanding difficulty, send live reactions, ask questions, and support questions from others.
+Call-in lets a speaker upload a PDF up to 20 MB or paste a public deck URL. It creates a presenter view, an audience QR code, and a private moderation link without requiring an account. Audience members can ask questions and support questions from others.
 
 ## Hosted service
 
@@ -11,7 +11,7 @@ Call-in lets a speaker upload a PDF up to 20 MB or paste a public deck URL. It c
 - Permanent interactive demo: https://call-in.mashbean.net/demo/
 - Create an event: https://call-in.mashbean.net/#create
 
-Hosted event data and uploaded PDFs expire after seven days. The permanent public demo starts with 45 seeded difficulty ratings and 6 labeled sample questions. Real audience interactions are added on top, and the demo resets daily at midnight in Taipei.
+Hosted event data and uploaded PDFs expire after seven days. The permanent public demo starts with 6 labeled sample questions. Real audience interactions are added on top, and the demo resets daily at midnight in Taipei.
 
 ## Open source and self-hosting
 

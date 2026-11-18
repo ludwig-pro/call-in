@@ -8,7 +8,6 @@ test("French display translates old defaults without changing custom event conte
     title: "My custom event",
     description: "My custom description",
     dashboardTitle: "My custom event · Live call-in",
-    difficulty: { title: "How easy is this to follow?", labels: ["Too easy", "Easy", "Just right", "Hard", "Lost"] },
     question: {
       title: "Ask anytime", placeholder: "My custom prompt",
       lenses: [{ id: "clarify", label: "Clarify", description: "A custom description" }],
@@ -24,7 +23,6 @@ test("French display translates old defaults without changing custom event conte
   assert.equal(translated.question.placeholder, "My custom prompt");
   assert.equal(translated.question.lenses[0].description, "A custom description");
   assert.equal(translated.question.title, "Posez vos questions");
-  assert.equal(translated.difficulty.labels[4], "Je décroche");
   assert.deepEqual(translated.moderation.codeOfConduct.rules, ["A custom rule"]);
   assert.equal(original.locale, "en");
   assert.equal(original.question.title, "Ask anytime");

@@ -97,25 +97,10 @@ function fillForm(next) {
   setValue("eyebrow", next.eyebrow);
   setValue("locale", next.locale);
   setValue("description", next.description);
-  setValue("difficultyTitle", next.difficulty.title);
   setValue("questionTitle", next.question.title);
   setValue("questionPlaceholder", next.question.placeholder);
   setValue("maxPerDevice", next.question.maxPerDevice);
   document.querySelector("[data-event-id]").textContent = next.eventId;
-
-  const difficultyRoot = document.querySelector("[data-difficulty-labels]");
-  difficultyRoot.innerHTML = "";
-  next.difficulty.labels.forEach((label, index) => {
-    const wrapper = document.createElement("label");
-    wrapper.textContent = String(index + 1);
-    const input = document.createElement("input");
-    input.name = `difficultyLabel${index + 1}`;
-    input.maxLength = 60;
-    input.required = true;
-    input.value = label;
-    wrapper.append(input);
-    difficultyRoot.append(wrapper);
-  });
 
   const reactionsRoot = document.querySelector("[data-reactions]");
   reactionsRoot.innerHTML = "";
@@ -188,8 +173,6 @@ function readConfigFromForm() {
   next.eyebrow = value("eyebrow");
   next.locale = value("locale");
   next.description = value("description");
-  next.difficulty.title = value("difficultyTitle");
-  next.difficulty.labels = [1, 2, 3, 4, 5].map((index) => value(`difficultyLabel${index}`));
   next.question.title = value("questionTitle");
   next.question.placeholder = value("questionPlaceholder");
   next.question.maxPerDevice = numberValue("maxPerDevice");

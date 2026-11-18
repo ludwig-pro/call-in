@@ -1,7 +1,3 @@
-import {
-  difficultyLabels,
-  setDifficultyLabels,
-} from "../difficulty.js";
 import { eventApi, eventContext, eventPage } from "../event-context.js";
 import { createLocale, localizeConfig } from "../i18n.js";
 
@@ -56,7 +52,7 @@ function render(state) {
           (question, index) => `
             <article>
               <div class="dashboard-question-head"><b>${question.id === newestId ? t("NEW", "最新") : String(index + 1).padStart(2, "0")}</b><span><time>${formatTime(question.createdAt)}</time> · ${t("Me too", "我也想問")} ${question.upvotes}</span></div>
-              ${question.lens !== null && question.difficulty !== null ? `<div class="question-tags"><span class="question-lens">${escapeHtml(lensLabels[question.lens] || question.lens)}</span><span class="question-difficulty difficulty-${question.difficulty}">${question.difficulty} · ${escapeHtml(difficultyLabels[question.difficulty - 1])}</span></div>` : ""}
+              ${question.lens !== null ? `<div class="question-tags"><span class="question-lens">${escapeHtml(lensLabels[question.lens] || question.lens)}</span></div>` : ""}
               <p>${escapeHtml(question.text)}</p>
               <small>${escapeHtml(question.nickname)}</small>
             </article>`,
@@ -139,7 +135,6 @@ connect();
 
 function applyConfig(nextConfig) {
   document.title = `${nextConfig.dashboardTitle} · Call-in`;
-  setDifficultyLabels(nextConfig.difficulty.labels);
   const values = {
     eyebrow: nextConfig.eyebrow,
     dashboardTitle: nextConfig.dashboardTitle,

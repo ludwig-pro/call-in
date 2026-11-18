@@ -2,7 +2,7 @@
   "eventId": "my-call-in",
   "eyebrow": "Call-in",
   "title": "You are here. Ask away.",
-  "description": "Scan the QR code to share the difficulty, ask a question, or send a reaction.",
+  "description": "Scan the QR code to ask a question.",
   "dashboardTitle": "Live audience",
   "deckUrl": "https://example.com/slides/",
   "locale": "en",
@@ -12,10 +12,6 @@
     "accent": "#35dcff",
     "highlight": "#ff4f9a",
     "positive": "#b9f24a"
-  },
-  "difficulty": {
-    "title": "How difficult does this feel right now?",
-    "labels": ["Too easy", "Easy", "OK", "Difficult", "Lost"]
   },
   "question": {
     "title": "Ask anytime",

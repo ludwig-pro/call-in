@@ -18,9 +18,10 @@ describe("Call-in Worker", () => {
   it("serves the public event configuration", async () => {
     const response = await SELF.fetch("https://example.com/api/config");
     expect(response.status).toBe(200);
-    const config = await response.json<{ eventId: string; difficulty: { labels: string[] } }>();
+    const config = await response.json<{ eventId: string; question: { title: string } }>();
     expect(config.eventId).toBe("my-call-in");
-    expect(config.difficulty.labels).toHaveLength(5);
+    expect(config.question.title).toBeTruthy();
+    expect(config).not.toHaveProperty("difficulty");
   });
 
   it("runs the permanent demo as a real isolated audience session with a scannable dashboard", async () => {
@@ -45,30 +46,17 @@ describe("Call-in Worker", () => {
 
     const voterId = crypto.randomUUID();
     const initialZhState = await SELF.fetch("https://example.com/api/demo/zh/state").then((response) =>
-      response.json<{ difficulty: { counts: number[]; total: number }; questions: Array<{ nickname: string }> }>(),
+      response.json<{ questions: Array<{ nickname: string }> }>(),
     );
     const initialEnState = await SELF.fetch("https://example.com/api/demo/en/state").then((response) =>
-      response.json<{ difficulty: { total: number }; questions: Array<{ nickname: string }> }>(),
+      response.json<{ questions: Array<{ nickname: string }> }>(),
     );
-    expect(initialZhState.difficulty).toMatchObject({ counts: [2, 5, 29, 7, 2], total: 45 });
+    expect(initialZhState).not.toHaveProperty("difficulty");
     expect(initialZhState.questions).toHaveLength(6);
     expect(initialZhState.questions.every((question) => question.nickname.startsWith("示範聽眾 #"))).toBe(true);
-    expect(initialEnState.difficulty.total).toBe(45);
+    expect(initialEnState).not.toHaveProperty("difficulty");
     expect(initialEnState.questions).toHaveLength(6);
     expect(initialEnState.questions.every((question) => question.nickname.startsWith("Demo guest #"))).toBe(true);
-
-    const difficulty = await SELF.fetch("https://example.com/api/demo/zh/difficulty", {
-      method: "POST",
-      headers: jsonHeaders,
-      body: JSON.stringify({ score: 4, voterId }),
-    });
-    expect(difficulty.status).toBe(200);
-    const state = await SELF.fetch("https://example.com/api/demo/zh/state").then((response) =>
-      response.json<{ difficulty: { counts: number[]; total: number }; questions: unknown[] }>(),
-    );
-    expect(state.difficulty.total).toBe(46);
-    expect(state.difficulty.counts[3]).toBe(8);
-    expect(state.questions).toHaveLength(6);
 
     const reaction = await SELF.fetch("https://example.com/api/demo/zh/reaction", {
       method: "POST",
@@ -86,7 +74,7 @@ describe("Call-in Worker", () => {
     const question = await SELF.fetch("https://example.com/api/demo/zh/question", {
       method: "POST",
       headers: jsonHeaders,
-      body: JSON.stringify({ text: "這是真人新增的問題嗎？", lens: "clarify", difficulty: 4, voterId }),
+      body: JSON.stringify({ text: "這是真人新增的問題嗎？", lens: "clarify", voterId }),
     });
     expect(question.status).toBe(200);
     expect((await question.json<{ submission: { text: string } }>()).submission.text).toBe("這是真人新增的問題嗎？");
@@ -243,9 +231,9 @@ describe("Call-in Worker", () => {
     expect(createdResponse.status).toBe(201);
     const created = await createdResponse.json<{ eventId: string }>();
     const response = await SELF.fetch(`https://example.com/api/events/${created.eventId}/config`);
-    const config = await response.json<{ locale: string; difficulty: { labels: string[] }; question: { title: string }; moderation: { codeOfConduct: { title: string } } }>();
+    const config = await response.json<{ locale: string; question: { title: string }; moderation: { codeOfConduct: { title: string } } }>();
     expect(config.locale).toBe("fr");
-    expect(config.difficulty.labels).toContain("Je décroche");
+    expect(config).not.toHaveProperty("difficulty");
     expect(config.question.title).toBe("Posez vos questions");
     expect(config.moderation.codeOfConduct.title).toBe("Gardons une discussion constructive");
 
@@ -254,9 +242,9 @@ describe("Call-in Worker", () => {
     expect(demo.locale).toBe("fr");
     expect(demo.deckUrl).toBe("https://example.com/fr/demo/slides/");
     const stateResponse = await SELF.fetch("https://example.com/api/demo/fr/state");
-    const state = await stateResponse.json<{ difficulty: { total: number }; questions: Array<{ text: string; lens: null; difficulty: null }> }>();
-    expect(state.difficulty.total).toBe(0);
-    expect(state.questions.every((question) => question.lens === null && question.difficulty === null)).toBe(true);
+    const state = await stateResponse.json<{ questions: Array<{ text: string; lens: null }> }>();
+    expect(state).not.toHaveProperty("difficulty");
+    expect(state.questions.every((question) => question.lens === null)).toBe(true);
     expect(state.questions.some((question) => question.text.includes("application pour participer"))).toBe(true);
   });
 
@@ -295,16 +283,7 @@ describe("Call-in Worker", () => {
     expect(await response.json<{ error: string }>()).toEqual({ error: "File is not a valid PDF" });
   });
 
-  it("records difficulty and keeps only the latest score per device", async () => {
-    const voterId = crypto.randomUUID();
-    await post("/api/difficulty", { voterId, score: 2 });
-    const state = await post("/api/difficulty", { voterId, score: 4 });
-    expect(state.difficulty.total).toBe(1);
-    expect(state.difficulty.counts).toEqual([0, 0, 0, 1, 0]);
-    expect(state.difficulty.average).toBe(4);
-  });
-
-  it("records questions with their current difficulty and orders newest first", async () => {
+  it("orders moderated questions newest first", async () => {
     const firstVoter = crypto.randomUUID();
     const secondVoter = crypto.randomUUID();
     await register(firstVoter, "First clinician");
@@ -313,13 +292,11 @@ describe("Call-in Worker", () => {
       voterId: firstVoter,
       text: "First test question",
       lens: "clarify",
-      difficulty: 2,
     });
     const second = await postQuestion({
       voterId: secondVoter,
       text: "Second test question",
       lens: "keeper",
-      difficulty: 5,
     });
     expect(first.submission.visibility).toBe("pending");
     expect(second.submission.visibility).toBe("pending");
@@ -330,7 +307,7 @@ describe("Call-in Worker", () => {
     const state = await stub.moderateQuestion(second.submission.id, "restore", "other");
     expect(state.questions).toHaveLength(2);
     expect(state.questions[0]?.text).toBe("Second test question");
-    expect(state.questions[0]?.difficulty).toBe(5);
+    expect(state.questions[0]?.lens).toBe("keeper");
 
     // Talk to the City 匯入格式：與 /state 同一份公開問題，無需權杖，依提出順序
     const csvResponse = await SELF.fetch("https://example.com/api/export/tttc.csv");
@@ -353,7 +330,6 @@ describe("Call-in Worker", () => {
       voterId: author,
       text: "A question should not count its author",
       lens: "clarify",
-      difficulty: 3,
     });
     const stub = env.LIVE_SESSION.getByName("my-call-in:default");
     await stub.moderateQuestion(question.submission.id, "restore", "other");
@@ -385,12 +361,11 @@ describe("Call-in Worker", () => {
         voterId: crypto.randomUUID(),
         text: "Can I ask before accepting the rules?",
         lens: "clarify",
-        difficulty: 3,
       }),
     });
     expect(response.status).toBe(200);
     expect((await response.json<{ submission: unknown }>()).submission).toMatchObject({
-      lens: "clarify", difficulty: 3,
+      lens: "clarify",
     });
   });
 
@@ -401,7 +376,6 @@ describe("Call-in Worker", () => {
       voterId,
       text: "This is the first rapid question",
       lens: "clarify",
-      difficulty: 3,
     });
     const response = await SELF.fetch("https://example.com/api/question", {
       method: "POST",
@@ -410,7 +384,6 @@ describe("Call-in Worker", () => {
         voterId,
         text: "This is the second rapid question",
         lens: "clarify",
-        difficulty: 3,
       }),
     });
     expect(response.status).toBe(429);
@@ -423,7 +396,6 @@ describe("Call-in Worker", () => {
       voterId,
       text: "Please clarify the evidence for this step",
       lens: "clarify",
-      difficulty: 4,
     });
     const stub = env.LIVE_SESSION.getByName("my-call-in:default");
     await stub.moderateQuestion(question.submission.id, "hide", "harassment");
@@ -446,7 +418,6 @@ describe("Call-in Worker", () => {
       voterId: author,
       text: "A question that needs community review",
       lens: "bridge",
-      difficulty: 3,
     });
     const stub = env.LIVE_SESSION.getByName("my-call-in:default");
     await stub.moderateQuestion(question.submission.id, "restore", "other");
@@ -504,7 +475,6 @@ describe("Call-in Worker", () => {
       voterId: nextAuthor,
       text: "A second question for trust weighting",
       lens: "clarify",
-      difficulty: 2,
     });
     await stub.moderateQuestion(nextQuestion.submission.id, "restore", "other");
     await stub.flagQuestion(nextQuestion.submission.id, "off_topic", flaggers[0]);
@@ -542,9 +512,8 @@ describe("Call-in Worker", () => {
 
 type State = {
   session: { mode: string };
-  difficulty: { counts: number[]; total: number; average: number | null };
   polls: Array<{ id: string; counts: number[]; total: number }>;
-  questions: Array<{ id: string; text: string; difficulty: number }>;
+  questions: Array<{ id: string; text: string }>;
 };
 
 type ParticipantState = {

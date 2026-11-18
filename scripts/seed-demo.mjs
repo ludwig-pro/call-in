@@ -135,7 +135,6 @@ async function seedQuestions() {
     const result = await post("/api/question", {
       text,
       lens,
-      difficulty: 1 + Math.floor(Math.random() * 5),
       voterId,
     });
     submissions.push(result.submission);

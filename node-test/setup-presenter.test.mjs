@@ -120,7 +120,7 @@ test("hosted creator replaces the landing-page demo and returns public and priva
   assert.match(landingCss, /\.button\.primary \{ color: #fff; border: 0;/);
   assert.match(landingHtml, /href="\/demo\/"/);
   assert.match(landingHtml, /直接進 Demo/);
-  assert.match(landingHtml, /<b>45<\/b> 筆難度/);
+  assert.doesNotMatch(landingHtml, /筆難度|bell-curve/);
   assert.match(landingHtml, /<b>6<\/b> 筆示範留言/);
   assert.match(landingHtml, /回到上方簡報預覽/);
   assert.doesNotMatch(landingHtml, /複製範例網址/);
@@ -132,7 +132,7 @@ test("hosted creator replaces the landing-page demo and returns public and priva
   assert.match(englishLandingHtml, /Buy me a coffee/);
   assert.match(englishLandingHtml, /href="\/en\/demo\/"/);
   assert.match(englishLandingHtml, /Enter demo/);
-  assert.match(englishLandingHtml, /<b>45<\/b> difficulty ratings/);
+  assert.doesNotMatch(englishLandingHtml, /difficulty ratings|bell-curve/);
   assert.match(englishLandingHtml, /<b>6<\/b> demo questions/);
   assert.match(englishLandingHtml, /Back to the slide preview/);
   assert.doesNotMatch(englishLandingHtml, /actions are not recorded/);
@@ -188,7 +188,7 @@ test("landing pages expose crawlable product answers and a shareable logo card",
   assert.match(robotsTxt, /Sitemap: https:\/\/call-in\.mashbean\.net\/sitemap\.xml/);
   assert.match(sitemapXml, /hreflang="zh-Hant-TW"/);
   assert.match(sitemapXml, /hreflang="en"/);
-  assert.match(llmsTxt, /45 seeded difficulty ratings and 6 labeled sample questions/);
+  assert.match(llmsTxt, /6 labeled sample questions/);
   assert.equal(fundingYaml.trim(), "buy_me_a_coffee: mashbean");
   assert.ok(socialCard.size > 10_000);
 });

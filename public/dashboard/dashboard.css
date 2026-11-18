@@ -63,7 +63,7 @@ a { color: inherit; }
 .dashboard-questions article small { color: var(--wall-panel-foreground, var(--muted)); font-size: .9rem; font-weight: 700; overflow-wrap: anywhere; }
 .dashboard-questions .empty { color: var(--wall-panel-foreground, var(--muted)); line-height: 1.5; }
 .dashboard-questions .question-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-.dashboard-questions .question-lens, .dashboard-questions .question-difficulty { display: inline-flex; padding: 5px 8px; border: 1px solid currentColor; color: var(--wall-panel-foreground, var(--ink)); font-size: .68rem; font-weight: 800; }
+.dashboard-questions .question-lens { display: inline-flex; padding: 5px 8px; border: 1px solid currentColor; color: var(--wall-panel-foreground, var(--ink)); font-size: .68rem; font-weight: 800; }
 .dashboard-expand { display: none; }
 html.embedded-dashboard .dashboard-expand[href] { display: inline-block; margin-bottom: 18px; font-size: .8rem; font-weight: 800; text-underline-offset: 4px; }
 .dashboard-open { position: fixed; right: 14px; bottom: 14px; z-index: 9; padding: 12px 16px; border: 2px solid var(--action); background: var(--action); color: var(--on-action); font-size: .75rem; font-weight: 900; text-decoration: none; text-transform: uppercase; }

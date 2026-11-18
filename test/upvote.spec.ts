@@ -7,7 +7,7 @@ describe("LiveSession.upvote", () => {
     const author = crypto.randomUUID();
     const fan = crypto.randomUUID();
     await stub.registerParticipant("Upvote Author", "2026-08-15", author);
-    const submission = await stub.ask("A question for testing upvotes", "", "clarify", 3, author);
+    const submission = await stub.ask("A question for testing upvotes", "", "clarify", author);
     await stub.moderateQuestion(submission.submission.id, "restore", "test");
 
     // the count means how many devices pressed "me too": the author is not one of them

@@ -98,7 +98,6 @@ export async function doctor() {
   const errors = [];
   if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(config.eventId || "")) errors.push("eventId must be a lowercase slug");
   if (!Array.isArray(config.polls) || config.polls.length > 8) errors.push("polls must contain zero to eight polls");
-  if (config.difficulty?.labels?.length !== 5) errors.push("difficulty.labels must contain exactly five labels");
   if (config.moderation?.enabled) {
     if (!config.moderation.codeOfConduct?.version) errors.push("moderation.codeOfConduct.version is required");
     if (!Array.isArray(config.moderation.codeOfConduct?.rules) || config.moderation.codeOfConduct.rules.length < 2) {

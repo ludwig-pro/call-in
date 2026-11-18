@@ -1,4 +1,4 @@
-import { env, runInDurableObject, SELF } from "cloudflare:test";
+import { env, evictDurableObject, runInDurableObject, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 
 const headers = { "Content-Type": "application/json" };
@@ -58,36 +58,59 @@ describe("meetup questions", () => {
     expect((await SELF.fetch(`${api}/deck.pdf`)).status).toBe(404);
   });
 
-  it("accepts a direct question, preserves explicit difficulty votes and stores no fabricated consent or context", async () => {
+  it("retires difficulty submissions while keeping historical event records and accepting old question payloads", async () => {
     const { stub, api } = await createEvent();
     const voterId = crypto.randomUUID();
-    await stub.setDifficulty(4, voterId);
+    const oldConfig = {
+      ...(await stub.eventConfig()),
+      difficulty: { title: "Suivez-vous ?", labels: ["1", "2", "3", "4", "5"] },
+      description: "Scannez le QR code pour partager vos questions, vos réactions et votre compréhension.",
+    };
+    await runInDurableObject(stub, (_instance, state) => {
+      state.storage.sql.exec("UPDATE event_config SET config_json = ?", JSON.stringify(oldConfig));
+      state.storage.sql.exec("INSERT INTO difficulty_votes VALUES (?, ?, ?)", voterId, 4, 700);
+    });
+    await evictDurableObject(stub);
+
+    const config = await (await SELF.fetch(api + "/config")).json();
+    expect(config).toMatchObject({ title: "Meetup", description: "Scannez le QR code pour poser vos questions." });
+    expect(config).not.toHaveProperty("difficulty");
+    for (const endpoint of ["/api", "/api/demo/fr", new URL(api).pathname]) {
+      const response = await SELF.fetch(new URL(endpoint + "/difficulty", api), {
+        method: "POST", headers, body: JSON.stringify({ score: 5, voterId }),
+      });
+      expect(response.status).toBe(404);
+    }
+
     const result = await question(api, { text: "Une première question ?", nickname: "Camille", voterId });
     expect(result.status).toBe(200);
-    const first = await result.json<{ submission: { id: string; nickname: string; lens: null; difficulty: null } }>();
-    expect(first.submission).toMatchObject({ nickname: "Camille", lens: null, difficulty: null });
-    const saved = await runInDurableObject(stub, (_instance, state) => ({
-      participant: state.storage.sql.exec("SELECT alias, public_label, coc_version, coc_accepted_at FROM participants WHERE voter_id = ?", voterId).one(),
-      votes: state.storage.sql.exec("SELECT voter_id, score FROM difficulty_votes").toArray(),
-    }));
-    expect(saved.participant).toEqual({ alias: "Camille", public_label: "Camille", coc_version: null, coc_accepted_at: null });
-    expect(saved.votes).toEqual([{ voter_id: voterId, score: 4 }]);
+    const first = await result.json<{ submission: unknown; snapshot: unknown }>();
+    expect(first.submission).toMatchObject({ nickname: "Camille", lens: null });
+    expect(first.submission).not.toHaveProperty("difficulty");
+    expect(first.snapshot).not.toHaveProperty("difficulty");
 
     const legacy = await question(api, { text: "Une question avec contexte", nickname: "Autre pseudo", lens: "bridge", difficulty: 2, voterId });
     expect(legacy.status).toBe(200);
-    expect((await legacy.json<{ submission: unknown }>()).submission).toMatchObject({ nickname: "Camille", lens: "bridge", difficulty: 2 });
-    expect((await stub.snapshot()).difficulty).toMatchObject({ total: 1, counts: [0, 0, 0, 1, 0] });
-    for (const context of [{ lens: "bridge" }, { difficulty: 2 }, { lens: null, difficulty: 2 }]) {
-      expect((await question(api, { text: "Question partielle", nickname: "Camille", voterId, ...context })).status).toBe(400);
-    }
+    const { submission } = await legacy.json<{ submission: { id: string } }>();
+    expect(submission).toMatchObject({ nickname: "Camille", lens: "bridge" });
+    expect(submission).not.toHaveProperty("difficulty");
+
+    const saved = await runInDurableObject(stub, (_instance, state) => ({
+      participant: state.storage.sql.exec("SELECT alias, public_label, coc_version, coc_accepted_at FROM participants WHERE voter_id = ?", voterId).one(),
+      votes: state.storage.sql.exec("SELECT voter_id, score FROM difficulty_votes").toArray(),
+      question: state.storage.sql.exec("SELECT difficulty FROM questions WHERE id = ?", submission.id).one(),
+      config: state.storage.sql.exec<{ config_json: string }>("SELECT config_json FROM event_config WHERE id = 1").one().config_json,
+    }));
+    expect(saved.participant).toEqual({ alias: "Camille", public_label: "Camille", coc_version: null, coc_accepted_at: null });
+    expect(saved.votes).toEqual([{ voter_id: voterId, score: 4 }]);
+    expect(saved.question).toEqual({ difficulty: null });
+    expect(JSON.parse(saved.config)).toEqual(oldConfig);
+
     const empty = await question(api, { text: "Question sans pseudo", nickname: "", voterId: crypto.randomUUID() });
     expect(empty.status).toBe(400);
     const short = await question(api, { text: "Question avec pseudo court", nickname: "L", voterId: crypto.randomUUID() });
     expect(short.status).toBe(200);
     expect((await short.json<{ submission: { nickname: string } }>()).submission.nickname).toBe("L");
-    const legacyWithoutVote = await question(api, { text: "Autre question historique", nickname: "S", lens: "keeper", difficulty: 5, voterId: crypto.randomUUID() });
-    expect(legacyWithoutVote.status).toBe(200);
-    expect((await stub.snapshot()).difficulty).toMatchObject({ total: 1, counts: [0, 0, 0, 1, 0] });
   });
 
   it("enforces pauses and existing mute or review restrictions even if the submitted nickname changes", async () => {
