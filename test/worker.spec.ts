@@ -28,7 +28,7 @@ describe("Call-in Worker", () => {
     const audiencePage = await SELF.fetch("https://example.com/demo/audience/");
     const dashboardPage = await SELF.fetch("https://example.com/demo/dashboard/");
     expect(audiencePage.status).toBe(200);
-    expect(await audiencePage.text()).toContain("Posez votre question");
+    expect(await audiencePage.text()).toContain("Questions du public");
     expect(dashboardPage.status).toBe(200);
     expect(await dashboardPage.text()).toContain("data-qr-open");
 
@@ -167,7 +167,7 @@ describe("Call-in Worker", () => {
     const audiencePage = await SELF.fetch(created.audienceUrl);
     const presenterPage = await SELF.fetch(created.presenterUrl);
     expect(audiencePage.status).toBe(200);
-    expect(await audiencePage.text()).toContain("Posez votre question");
+    expect(await audiencePage.text()).toContain("Questions du public");
     expect(presenterPage.status).toBe(200);
     expect(await presenterPage.text()).toContain("Call-in 講者頁");
 

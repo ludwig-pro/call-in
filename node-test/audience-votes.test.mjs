@@ -14,6 +14,9 @@ const waitFor = async (condition) => {
 test("participant navigation, confirmed votes, failures and pending questions", async () => {
   const html = await readFile(new URL("../public/audience/index.html", import.meta.url), "utf8");
   const dom = new JSDOM(html, { url: "https://example.test/e/0123456789abcdef0123456789abcdef/", pretendToBeVisual: true });
+  const wideLayout = new dom.window.EventTarget();
+  wideLayout.matches = false;
+  dom.window.matchMedia = () => wideLayout;
   const previous = new Map();
   for (const key of ["window", "document", "location", "history", "localStorage", "navigator", "fetch", "WebSocket"]) {
     previous.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
@@ -74,6 +77,17 @@ test("participant navigation, confirmed votes, failures and pending questions", 
     assert.equal(listView.hidden, false);
     assert.equal(formView.hidden, true);
     assert.equal(location.hash, "#questions");
+    assert.equal(doc.querySelector("[data-show-list]").getAttribute("aria-current"), "true");
+    doc.querySelector("#question").value = "Mon brouillon";
+    wideLayout.matches = true;
+    wideLayout.dispatchEvent(new dom.window.Event("change"));
+    assert.equal(listView.hidden, false);
+    assert.equal(formView.hidden, false);
+    assert.equal(doc.querySelector("#question").value, "Mon brouillon");
+    wideLayout.matches = false;
+    wideLayout.dispatchEvent(new dom.window.Event("change"));
+    assert.equal(listView.hidden, false);
+    assert.equal(formView.hidden, true);
     assert.equal(doc.querySelector(".question-card p").textContent, publicQuestion.text);
     assert.equal(doc.querySelector(".question-card img"), null);
     assert.equal(doc.querySelector(".question-meta small").textContent, publicQuestion.nickname);
